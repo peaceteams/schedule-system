@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>イベント管理</title>
+</head>
+<body>
+    <h1>イベント管理</h1>
+
+    <input id="event-name" placeholder="イベント名">
+    <button onclick="createEvent()">イベント作成</button>
+
+    <h2>イベント一覧</h2>
+    <div id="event-list"></div>
+
+    <script>
+        async function createEvent() {
+            const name = document.getElementById("event-name").value;
+            const sessionToken = localStorage.getItem("sessionToken");
+
+            const res = await fetch("/api/createEvent", {
+            method: "POST",
+            body: JSON.stringify({ name, sessionToken })
+            });
+
+            const data = await res.json();
+            if (data.ok) {
+            alert("イベントを作成しました");
+            loadEvents();
+            }
+        }
+
+        async function loadEvents() {
+            // 後で実装
+            document.getElementById("event-list").innerHTML = "（後で実装）";
+        }
+
+        loadEvents();
+    </script>
+</body>
+</html>

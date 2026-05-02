@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>管理者ログイン</title>
+</head>
+<body>
+    <h1>管理者ログイン</h1>
+
+    <input id="pw" type="password" placeholder="パスワード">
+    <button onclick="login()">ログイン</button>
+
+    <script>
+        async function login() {
+            const pw = document.getElementById("pw").value;
+
+            const res = await fetch("/api/adminLogin", {
+            method: "POST",
+            body: JSON.stringify({ password: pw })
+            });
+
+            const data = await res.json();
+
+            if (data.ok) {
+            localStorage.setItem("sessionToken", data.sessionToken);
+            location.href = "admin-events.html";
+            } else {
+            alert("パスワードが違います");
+            }
+        }
+    </script>
+</body>
+</html>
