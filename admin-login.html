@@ -15,17 +15,17 @@
             const pw = document.getElementById("pw").value;
 
             const res = await fetch("/api/adminLogin", {
-            method: "POST",
-            body: JSON.stringify({ password: pw })
+                method: "POST",
+                body: JSON.stringify({ password: pw })
             });
 
             const data = await res.json();
 
             if (data.ok) {
-            localStorage.setItem("sessionToken", data.sessionToken);
-            location.href = "admin-events.html";
+                localStorage.setItem("sessionToken", data.sessionToken);
+                location.href = "admin-events.html";
             } else {
-            alert("パスワードが違います");
+                alert("パスワードが違います");
             }
         }
     </script>

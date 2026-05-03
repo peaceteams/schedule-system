@@ -2,7 +2,7 @@ export default async function handler(req, res) {
     const body = JSON.parse(req.body || "{}");
 
     // パスワードチェック
-    if (body.password !== process.env.ADMIN_PASSWORD) {
+    if (body.password !== process.env.admin_password) {
         return res.status(401).json({ ok: false });
     }
 
