@@ -1,9 +1,11 @@
+import { sendMail } from "../lib/sendMail"; // ← sendMail の場所に合わせて修正
+
 export default async function handler(req, res) {
   console.log("API START");
 
   try {
     console.log("Before sendMail");
-    await sendMail("peacesupportteams@gmail.com", "test", "hello");
+    await sendMail("あなたのメールアドレス", "test", "hello");
     console.log("After sendMail");
 
     res.status(200).json({ ok: true });
