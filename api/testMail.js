@@ -26,8 +26,6 @@ function htmlCreate(){
 
 export default async function handler(req, res) {
   try {
-    const { email, magicLink } = req.body;
-
     const html = buildMagicLinkTemplate(htmlCreate());
 
     await sendMail("myfree@outlook.jp", "ログインリンクのお知らせ", html);
