@@ -1,5 +1,3 @@
-import fetch from "node-fetch";
-
 export default async function handler(req, res) {
     const body = JSON.parse(req.body || "{}");
     const { name, sessionToken } = body;
