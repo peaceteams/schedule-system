@@ -20,11 +20,18 @@
         const data = await res.json();
         console.log(data);
     }
+    async function forceLogout() {
+        const res = await fetch("/api/forceLogout", { method: "POST" });
+        const data = await res.json();
+        if (data.ok) {
+            alert("全員ログアウトし、ロックアウトしました");
+        }
+    }
 </script>
 </head>
 <body>
     <h1>イベント管理</h1>
-
+    <button onclick="forceLogout()">強制ログアウト</button>
     <input id="event-name" placeholder="イベント名">
     <button onclick="createEvent()">イベント作成</button>
 
