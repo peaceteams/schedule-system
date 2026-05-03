@@ -4,10 +4,24 @@
     <meta charset="UTF-8">
     <title>イベント管理</title>
 <script>
-    if (!localStorage.getItem("sessionToken")) {
-        location.href = "admin-login.html";
+    async function sessionCheck(){
+        const sessionToken = localStorage.getItem("sessionToken");
+        if (!localStorage.getItem("sessionToken")) {
+            location.href = "admin-login.html"; 
+            return;
+        }
+        // ロックアウト確認
+        const res = await fetch("/api/checkLockout");
+        const data = await res.json();
+
+        if (data.locked === true) {
+            localStorage.removeItem("sessionToken");
+            location.href = "admin-login.html";
+            return;
+        }
     }
     async function createEvent() {
+        sessionCheck();
         const name = document.getElementById("eventName").value;
         const res = await fetch("/api/createEvent", {
             method: "POST",
@@ -21,10 +35,13 @@
         console.log(data);
     }
     async function forceLogout() {
+        sessionCheck();
         const res = await fetch("/api/forceLogout", { method: "POST" });
         const data = await res.json();
         if (data.ok) {
             alert("全員ログアウトし、ロックアウトしました");
+            localStorage.removeItem("sessionToken");
+            location.href = "admin-login.html";
         }
     }
 </script>
@@ -32,7 +49,7 @@
 <body>
     <h1>イベント管理</h1>
     <button onclick="forceLogout()">強制ログアウト</button>
-    <input id="event-name" placeholder="イベント名">
+    <input id="eventName" placeholder="イベント名">
     <button onclick="createEvent()">イベント作成</button>
 
     <h2>イベント一覧</h2>
