@@ -5,7 +5,7 @@ export default async function handler(req, res) {
 
   try {
     console.log("Before sendMail");
-    await sendMail("あなたのメールアドレス", "test", "hello");
+    await sendMail("peacesupportteams@gmail.com", "test", "hello");
     console.log("After sendMail");
 
     res.status(200).json({ ok: true });
