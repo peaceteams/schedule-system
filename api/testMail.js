@@ -1,4 +1,4 @@
-import { sendMail } from "../../lib/sendMail.js";
+import { sendMail } from "../lib/sendMail.js";
 
 export default async function handler(req, res) {
     try {
