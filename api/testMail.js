@@ -17,7 +17,7 @@ function buildMagicLinkTemplate(link) {
           このリンクは一定時間で無効になります。心当たりがない場合は、このメールは無視してください。
         </p>
         <p style="font-size: 12px; color: #9ca3af; margin: 16px 0 0;">
-          Peace Support System
+          PEACE サポートチーム
         </p>
       </div>
     </div>
