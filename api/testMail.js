@@ -1,6 +1,6 @@
 import { sendMail } from "../lib/sendMail";
 
-function htmlCreate(){
+function buildMagicLinkTemplate(link) {
   return `
     <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; background-color: #f5f5f5;">
       <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 24px; border: 1px solid #e5e5e5;">
@@ -26,7 +26,7 @@ function htmlCreate(){
 
 export default async function handler(req, res) {
   try {
-    const html = buildMagicLinkTemplate(htmlCreate());
+    const html = buildMagicLinkTemplate("https://google.com");
 
     await sendMail("myfree@outlook.jp", "ログインリンクのお知らせ", html);
 
