@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>イベント管理</title>
+    <script>
+    // パスワードが保存されていなければログイン画面へ戻す
+    if (!localStorage.getItem("adminPassword")) {
+        location.href = "admin-login.html";
+    }
+    </script>
 </head>
 <body>
     <h1>イベント管理</h1>
