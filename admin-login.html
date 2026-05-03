@@ -1,27 +1,35 @@
-<h2>管理者ログイン</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理者ログイン</title>
+    <script>
+    async function login() {
+        const pw = document.getElementById("pw").value;
 
-<input id="pw" type="password" placeholder="パスワード">
-<button onclick="login()">ログイン</button>
+        const res = await fetch("/api/adminLogin", {
+            method: "POST",
+            body: JSON.stringify({ password: pw })
+        });
 
-<script>
-async function login() {
-  const pw = document.getElementById("pw").value;
+        const data = await res.json();
 
-  const res = await fetch("/api/adminLogin", {
-    method: "POST",
-    body: JSON.stringify({ password: pw })
-  });
+        if (data.ok) {
+            // パスワードを保存（後で createEvent に送るため）
+            localStorage.setItem("adminPassword", pw);
 
-  const data = await res.json();
-
-  if (data.ok) {
-    // パスワードを保存（後で createEvent に送るため）
-    localStorage.setItem("adminPassword", pw);
-
-    // イベント画面へ遷移
-    location.href = "admin-events.html";
-  } else {
-    alert("パスワードが違います");
-  }
-}
-</script>
+            // イベント画面へ遷移
+            location.href = "admin-events.html";
+        } else {
+            alert("パスワードが違います");
+        }
+    }
+    </script>
+</head>
+<body>
+    <h2>管理者ログイン</h2>
+    <input id="pw" type="password" placeholder="パスワード">
+    <button onclick="login()">ログイン</button>
+</body>
+</html>
