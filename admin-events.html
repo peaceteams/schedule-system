@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>イベント管理</title>
 <script>
+    sessionCheck();
     async function sessionCheck(){
         const sessionToken = localStorage.getItem("sessionToken");
         if (!localStorage.getItem("sessionToken")) {
