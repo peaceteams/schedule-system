@@ -28,7 +28,7 @@ export default async function handler(req, res) {
   try {
     const html = buildMagicLinkTemplate("https://google.com");
 
-    await sendMail("myfree@outlook.jp", "ログインリンクのお知らせ", html);
+    await sendMail("peacesupportteams@gmail.com", "ログインリンクのお知らせ", html);
 
     res.status(200).json({ ok: true });
   } catch (err) {
