@@ -27,8 +27,8 @@ export default async function handler(req, res) {
   }
 
   // 有効期限チェック
-  const now = new Date();
-  const expires = new Date(user.verification_expires);
+  const now = Date.now();
+  const expires = new Date(user.verification_expires).getTime();
 
   if (now > expires) {
     return res.status(400).send("Verification link has expired");
