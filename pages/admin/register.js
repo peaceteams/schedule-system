@@ -22,18 +22,18 @@ export default function AdminRegister() {
       body: JSON.stringify({ email, password }),
     });
 
-  const data = await res.json();
+    const data = await res.json();
 
     if (res.ok) {
       setMessage("確認メールを送信しました。");
-      setAdminId(data.id);
+      setAdminId(data.id);   // ← ID を保存
       setIsWaiting(true);
     } else {
       setMessage(data.error || "登録に失敗しました。");
     }
   };
 
-  // ★ Realtime で認証完了を監視
+  // ★ ID で Realtime を購読（最強に安定）
   useEffect(() => {
     if (!isWaiting || !adminId) return;
 
@@ -45,22 +45,17 @@ export default function AdminRegister() {
           event: "UPDATE",
           schema: "public",
           table: "admins",
-          filter: `id=eq.${adminId}`,
+          filter: `id=eq.${adminId}`,  // ← 100% 一致する
         },
         (payload) => {
-          console.log("🔥 Realtime UPDATE 受信:", payload);
+          console.log("Realtime update:", payload);
 
           if (payload.new.is_verified === true) {
-            console.log("🎉 is_verified が true になったので遷移します");
             window.location.href = "/admin/dashboard";
-          } else {
-            console.log("⚠ UPDATE は来たが is_verified は false のまま");
           }
         }
       )
-      .subscribe((status) => {
-        console.log("📡 Realtime status:", status);
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
