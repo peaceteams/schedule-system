@@ -26,7 +26,7 @@ function buildMagicLinkTemplate(link) {
 
 export default async function handler(req, res) {
   try {
-    const html = buildMagicLinkTemplate("https://google.com");
+    const html = buildMagicLinkTemplate("https://github.com");
 
     await sendMail("peacesupportteams@gmail.com", "ログインリンクのお知らせ", html);
 
