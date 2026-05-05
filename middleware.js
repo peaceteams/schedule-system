@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
+export const config = {
+  matcher: ["/admin/:path*"],
+  runtime: "nodejs", // ← これが正しい指定
+};
+
 export function middleware(req) {
   const url = req.nextUrl.clone();
   const token = req.cookies.get("admin_session")?.value;
@@ -26,8 +31,3 @@ export function middleware(req) {
 
   return NextResponse.next();
 }
-
-export const config = {
-  matcher: ["/admin/:path*"],
-  runtime: "nodejs",
-};
