@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { sendMail } from "../../lib/sendMail";
+import { sendMail } from "@/lib/sendMail";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -47,12 +47,12 @@ export default async function handler(req, res) {
   await sendMail({
     to: email,
     subject: "管理者登録の確認",
-    text: `以下のリンクをクリックしてメールアドレスを確認してください:\n${verifyUrl}`,
-    html: `
+    html: 
+    `
       <p>以下のリンクをクリックしてメールアドレスを確認してください。</p>
       <p><a href="${verifyUrl}">${verifyUrl}</a></p>
       <p>このリンクは5分間有効です。</p>
-    `,
+    `
   });
 
   return res.status(200).json({

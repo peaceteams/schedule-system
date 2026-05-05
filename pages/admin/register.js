@@ -1,106 +1,57 @@
 import { useState } from "react";
 
 export default function AdminRegister() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [message, setMessage] = useState("");
-    const [isError, setIsError] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-        const res = await fetch("/api/adminRegister", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-        });
+    const res = await fetch("/api/adminRegister", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-        const data = await res.json();
+    const data = await res.json();
 
-        if (data.ok) {
-            setIsError(false);
-            setMessage("確認メールを送信しました。メールをチェックしてください。");
-        } else {
-            setIsError(true);
-            setMessage("エラー: " + (data.error || data.message));
-        }
-    };
+    if (res.ok) {
+      setMessage("登録が完了しました。メールを確認してください。");
+    } else {
+      setMessage(data.error || "登録に失敗しました。");
+    }
+  };
 
   return (
-    <div style={styles.container}>
-        <h2>管理者アカウント登録</h2>
+    <div style={{ maxWidth: 400, margin: "40px auto" }}>
+      <h2>管理者登録</h2>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
+      <form onSubmit={handleSubmit}>
         <input
-            type="email"
-            placeholder="メールアドレス"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={styles.input}
+          type="email"
+          placeholder="メールアドレス"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          style={{ width: "100%", margin: "8px 0", padding: "8px" }}
         />
 
         <input
-            type="password"
-            placeholder="パスワード"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={styles.input}
+          type="password"
+          placeholder="パスワード"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          style={{ width: "100%", margin: "8px 0", padding: "8px" }}
         />
 
-        <button type="submit" style={styles.button}>
-            登録する
+        <button type="submit" style={{ width: "100%", padding: "10px" }}>
+          登録
         </button>
-        </form>
+      </form>
 
-        {message && (
-            <div
-                style={{
-                ...styles.message,
-                backgroundColor: isError ? "#ffe0e0" : "#e0ffe0",
-                color: isError ? "#c00000" : "#008000",
-                }}
-            >
-                {message}
-            </div>
-        )}
+      {message && <p style={{ marginTop: 10 }}>{message}</p>}
     </div>
-    );
+  );
 }
-
-const styles = {
-    container: {
-        fontFamily: "sans-serif",
-        maxWidth: "400px",
-        margin: "40px auto",
-        padding: "20px",
-        border: "1px solid #ddd",
-        borderRadius: "8px",
-    },
-    form: {
-        marginTop: "20px",
-    },
-        input: {
-        width: "100%",
-        padding: "10px",
-        margin: "8px 0",
-        border: "1px solid #ccc",
-        borderRadius: "4px",
-    },
-    button: {
-        width: "100%",
-        padding: "12px",
-        background: "#0070f3",
-        color: "white",
-        border: "none",
-        borderRadius: "4px",
-        cursor: "pointer",
-        fontSize: "16px",
-    },
-        message: {
-        marginTop: "15px",
-        padding: "10px",
-        borderRadius: "4px",
-    },
-};
