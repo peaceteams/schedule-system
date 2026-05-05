@@ -1,6 +1,9 @@
 "use client";
-export const dynamic = "force-dynamic";
 import { useState } from "react";
+
+export async function getServerSideProps() {
+  return { props: {} };
+}
 
 export default function AdminRegister() {
   const [email, setEmail] = useState("");
