@@ -1,4 +1,3 @@
-"use client";
 import { useState } from "react";
 
 export async function getServerSideProps() {
