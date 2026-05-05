@@ -9,7 +9,7 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   const { token } = req.query;
-  console.log("TOKEN FROM URL:", token, token.length);
+  console.log("TOKEN FROM URL (raw):", token.split("").map(c => c.charCodeAt(0)));
 
   if (!token) {
     return res.status(400).send("Invalid token");
