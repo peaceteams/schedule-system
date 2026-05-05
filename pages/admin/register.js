@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export async function getServerSideProps() {
   return { props: {} };
@@ -8,6 +8,7 @@ export default function AdminRegister() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [isWaiting, setIsWaiting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,11 +22,28 @@ export default function AdminRegister() {
     const data = await res.json();
 
     if (res.ok) {
-      setMessage("登録が完了しました。メールを確認してください。");
+      setMessage("確認メールを送信しました。メールを開くと自動で進みます。");
+      setIsWaiting(true); // ← ポーリング開始
     } else {
       setMessage(data.error || "登録に失敗しました。");
     }
   };
+
+  // ★ 5秒ごとに認証済みかチェック
+  useEffect(() => {
+    if (!isWaiting || !email) return;
+
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/checkVerified?email=${email}`);
+      const data = await res.json();
+
+      if (data.verified) {
+        window.location.href = "/admin/login";
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isWaiting, email]);
 
   return (
     <div style={{ maxWidth: 400, margin: "40px auto" }}>
