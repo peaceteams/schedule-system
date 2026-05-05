@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
 
-export async function getServerSideProps() {
-  return { props: {} };
-}
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
 
 export default function AdminRegister() {
   const [email, setEmail] = useState("");
@@ -22,27 +24,40 @@ export default function AdminRegister() {
     const data = await res.json();
 
     if (res.ok) {
-      setMessage("確認メールを送信しました。メールを開くと自動で進みます。");
-      setIsWaiting(true); // ← ポーリング開始
+      setMessage("確認メールを送信しました。");
+      setIsWaiting(true);
     } else {
       setMessage(data.error || "登録に失敗しました。");
     }
   };
 
-  // ★ 5秒ごとに認証済みかチェック
+  // ★ Realtime で認証完了を監視
   useEffect(() => {
     if (!isWaiting || !email) return;
 
-    const interval = setInterval(async () => {
-      const res = await fetch(`/api/checkVerified?email=${email}`);
-      const data = await res.json();
+    const channel = supabase
+      .channel("admin-verification")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "admins",
+          filter: `email=eq.${email}`,
+        },
+        (payload) => {
+          console.log("Realtime update:", payload);
 
-      if (data.verified) {
-        window.location.href = "/admin/dashboard";
-      }
-    }, 5000);
+          if (payload.new.is_verified === true) {
+            window.location.href = "/admin/dashboard";
+          }
+        }
+      )
+      .subscribe();
 
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [isWaiting, email]);
 
   return (
