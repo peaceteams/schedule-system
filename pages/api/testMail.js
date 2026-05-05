@@ -1,4 +1,4 @@
-import { sendMail } from "../lib/sendMail";
+import { sendMail } from "@/lib/sendMail";
 
 function buildMagicLinkTemplate(link) {
   return `
