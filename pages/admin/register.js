@@ -11,6 +11,7 @@ export default function AdminRegister() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isWaiting, setIsWaiting] = useState(false);
+  const [adminId, setAdminId] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,10 +22,11 @@ export default function AdminRegister() {
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await res.json();
+  const data = await res.json();
 
     if (res.ok) {
       setMessage("確認メールを送信しました。");
+      setAdminId(data.id);
       setIsWaiting(true);
     } else {
       setMessage(data.error || "登録に失敗しました。");

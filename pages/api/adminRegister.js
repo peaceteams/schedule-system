@@ -69,6 +69,7 @@ export default async function handler(req, res) {
 
   return res.status(200).json({
     ok: true,
-    message: "確認メールを送信しました。メールをチェックしてください。",
+    message: "メール送信しました",
+    id: admin.id
   });
 }

@@ -15,20 +15,17 @@ export default async function handler(req, res) {
     return res.status(400).send("Invalid token");
   }
 
-  // 認証済みに更新（Realtime が発火）
   await supabase
     .from("admins")
     .update({ is_verified: true })
     .eq("id", admin.id);
 
-  // JWT 発行
   const jwtToken = jwt.sign(
     { id: admin.id, email: admin.email },
     process.env.JWT_SECRET,
     { expiresIn: "12h" }
   );
 
-  // Cookie 設定（ローカルは secure:false）
   res.setHeader(
     "Set-Cookie",
     serialize("admin_session", jwtToken, {
@@ -40,7 +37,6 @@ export default async function handler(req, res) {
     })
   );
 
-  // ★ redirect を使わず HTML を返す（これが最強）
   res.setHeader("Content-Type", "text/html");
   return res.end(`
     <html>
