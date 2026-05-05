@@ -35,7 +35,7 @@ export default function AdminRegister() {
 
   // ★ Realtime で認証完了を監視
   useEffect(() => {
-    if (!isWaiting || !email) return;
+    if (!isWaiting || !adminId) return;
 
     const channel = supabase
       .channel("admin-verification")
@@ -45,22 +45,27 @@ export default function AdminRegister() {
           event: "UPDATE",
           schema: "public",
           table: "admins",
-          filter: `email=eq.${email}`,
+          filter: `id=eq.${adminId}`,
         },
         (payload) => {
-          console.log("Realtime update:", payload);
+          console.log("🔥 Realtime UPDATE 受信:", payload);
 
           if (payload.new.is_verified === true) {
+            console.log("🎉 is_verified が true になったので遷移します");
             window.location.href = "/admin/dashboard";
+          } else {
+            console.log("⚠ UPDATE は来たが is_verified は false のまま");
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("📡 Realtime status:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isWaiting, email]);
+  }, [isWaiting, adminId]);
 
   return (
     <div style={{ maxWidth: 400, margin: "40px auto" }}>

@@ -29,6 +29,17 @@ export default async function handler(req, res) {
       console.log("ERROR: Missing email or password");
       return res.status(400).json({ error: "email と password が必要です" });
     }
+    const { data: existing } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+
+    if (existing) {
+      return res.status(400).json({
+        error: "このメールアドレスは既に登録されています。",
+      });
+    }
 
     // パスワードハッシュ
     const passwordHash = await bcrypt.hash(password, 10);
