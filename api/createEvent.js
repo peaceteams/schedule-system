@@ -24,14 +24,14 @@ export default async function handler(req, res) {
     const url = `https://api.github.com/repos/${repo}/contents/${path}`;
 
     return await fetch(url, {
-        method: "PUT",
-        headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
+            method: "PUT",
+            headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
         },
         body: JSON.stringify({
-        message: `Create ${path}`,
-        content: Buffer.from(content).toString("base64")
+            message: `Create ${path}`,
+            content: Buffer.from(content).toString("base64")
         })
     });
     }
