@@ -25,6 +25,7 @@ export default async function handler(req, res) {
   // 認証用トークン生成
   const token = crypto.randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + 1000 * 60 * 5); // 5分有効
+  console.log("TOKEN GENERATED:", token, token.length);
 
   // 仮登録（is_verified = false）
   const { error } = await supabase
