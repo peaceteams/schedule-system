@@ -1,70 +1,84 @@
-import { createClient } from "@supabase/supabase-js";
-import jwt from "jsonwebtoken";
-import { serialize } from "cookie";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import supabase from "@/lib/db";
 
 export default async function handler(req, res) {
-  const { token } = req.query;
-  console.log("TOKEN FROM URL (raw):", token.split("").map(c => c.charCodeAt(0)));
+  console.log("=== VERIFY API START ===");
 
-  if (!token) {
-    return res.status(400).send("Invalid token");
+  try {
+    const { token } = req.query;
+
+    console.log("RAW TOKEN FROM URL:", token);
+
+    if (!token) {
+      console.log("ERROR: Token missing");
+      return res.status(400).send("Token is required");
+    }
+
+    // 1. トークンのクリーニング（不可視文字・改行・空白）
+    const cleanToken = token
+      .trim()
+      .replace(/[\r\n]/g, "")
+      .replace(/[\u200B-\u200D\uFEFF]/g, "");
+
+    console.log("CLEANED TOKEN:", cleanToken);
+    console.log(
+      "CLEANED TOKEN RAW:",
+      cleanToken.split("").map((c) => c.charCodeAt(0))
+    );
+
+    // 2. Supabase から該当ユーザーを取得
+    console.log("Fetching user from Supabase…");
+
+    const { data: user, error } = await supabase
+      .from("admins")
+      .select("*")
+      .eq("verification_token", cleanToken)
+      .maybeSingle();
+
+    console.log("SUPABASE USER:", user);
+    console.log("SUPABASE ERROR:", error);
+
+    if (error || !user) {
+      console.log("ERROR: Token not found in DB");
+      return res.status(400).send("Invalid or expired token");
+    }
+
+    // 3. 有効期限チェック（UTC 同士で比較）
+    const now = Date.now();
+    const expires = new Date(user.verification_expires).getTime();
+
+    console.log("NOW (ms):", now);
+    console.log("EXPIRES (ms):", expires);
+    console.log("NOW (ISO):", new Date(now).toISOString());
+    console.log("EXPIRES (ISO):", user.verification_expires);
+
+    if (now > expires) {
+      console.log("ERROR: Token expired");
+      return res.status(400).send("Verification link has expired");
+    }
+
+    // 4. 認証成功 → is_verified を true にし、token を無効化
+    console.log("Updating user verification status…");
+
+    const { error: updateError } = await supabase
+      .from("admins")
+      .update({
+        is_verified: true,
+        verification_token: null,
+        verification_expires: null,
+      })
+      .eq("id", user.id);
+
+    console.log("UPDATE ERROR:", updateError);
+
+    if (updateError) {
+      console.log("ERROR: Failed to update verification status");
+      return res.status(500).send("Failed to update verification status");
+    }
+
+    console.log("=== VERIFY SUCCESS ===");
+    return res.status(200).send("Email verified successfully");
+  } catch (err) {
+    console.error("=== VERIFY API FATAL ERROR ===", err);
+    return res.status(500).send("Server error");
   }
-
-  // token に一致するユーザーを取得
-  const { data: user, error } = await supabase
-    .from("admins")
-    .select("*")
-    .eq("verification_token", token)
-    .single();
-
-  if (error || !user) {
-    return res.status(400).send("Invalid or expired token");
-  }
-
-  // 有効期限チェック
-  const now = Date.now();
-  const expires = new Date(user.verification_expires).getTime();
-
-  if (now > expires) {
-    return res.status(400).send("Verification link has expired");
-  }
-
-  // メール認証完了
-  await supabase
-    .from("admins")
-    .update({
-      is_verified: true,
-      verification_token: null,
-      verification_expires: null,
-    })
-    .eq("id", user.id);
-
-  // JWT 発行（管理者ログイン用）
-  const jwtToken = jwt.sign(
-    {
-      adminId: user.id,
-      email: user.email,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
-
-  // Cookie に保存（httpOnly / secure）
-  res.setHeader(
-    "Set-Cookie",
-    serialize("admin_session", jwtToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 12, // 12時間
-    })
-  );
-
-  // 管理画面へリダイレクト
-  return res.redirect("/admin/dashboard");
 }
