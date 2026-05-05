@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 
 export const config = {
   matcher: ["/admin/:path*"],
-  runtime: "nodejs", // ← これが正しい指定
+  runtime: "nodejs",
 };
 
 export function middleware(req) {
