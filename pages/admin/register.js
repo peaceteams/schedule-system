@@ -37,6 +37,8 @@ export default function AdminRegister() {
   useEffect(() => {
     if (!isWaiting || !adminId) return;
 
+    console.log("📡 Realtime チャンネル開始:", adminId);
+
     const channel = supabase
       .channel("admin-verification")
       .on(
@@ -45,19 +47,25 @@ export default function AdminRegister() {
           event: "UPDATE",
           schema: "public",
           table: "admins",
-          filter: `id=eq.${adminId}`,  // ← 100% 一致する
+          filter: `id=eq.${adminId}`,
         },
         (payload) => {
-          console.log("Realtime update:", payload);
+          console.log("🔥 Realtime UPDATE 受信:", payload);
 
           if (payload.new.is_verified === true) {
+            console.log("🎉 is_verified が true → 遷移します");
             window.location.href = "/admin/dashboard";
+          } else {
+            console.log("⚠ UPDATE は来たが is_verified は false");
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("📡 Realtime status:", status);
+      });
 
     return () => {
+      console.log("❌ Realtime チャンネル削除");
       supabase.removeChannel(channel);
     };
   }, [isWaiting, adminId]);
