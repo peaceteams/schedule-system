@@ -40,5 +40,15 @@ export default async function handler(req, res) {
     })
   );
 
-  return res.redirect("/verified");
+  // ★ redirect を使わず HTML を返す（これが最強）
+  res.setHeader("Content-Type", "text/html");
+  return res.end(`
+    <html>
+      <body>
+        <script>
+          window.location.href = "/verified";
+        </script>
+      </body>
+    </html>
+  `);
 }
