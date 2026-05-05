@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   const { data: admin } = await supabase
     .from("admins")
     .select("*")
-    .eq("verificationToken", token)
+    .eq("verification_token", token)
     .maybeSingle();
 
   if (!admin) {
