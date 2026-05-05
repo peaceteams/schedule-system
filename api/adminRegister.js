@@ -20,8 +20,8 @@ export default async function handler(req, res) {
   // パスワードをハッシュ化
   const passwordHash = await bcrypt.hash(password, 10);
 
-  // Supabase に保存
-  const { error } = await supabase
+  // Supabase に保存（ログ付き）
+  const { data, error } = await supabase
     .from("admins")
     .insert({
       email,
@@ -29,8 +29,15 @@ export default async function handler(req, res) {
     });
 
   if (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({
+      ok: false,
+      message: "Supabase error",
+      error: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
   }
 
-  return res.status(200).json({ ok: true });
+  return res.status(200).json({ ok: true, data });
 }
