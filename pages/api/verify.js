@@ -1,4 +1,6 @@
 import supabase from "@/lib/db";
+import jwt from "jsonwebtoken";
+import { serialize } from "cookie";
 
 export default async function handler(req, res) {
   console.log("=== VERIFY API START ===");
@@ -75,8 +77,39 @@ export default async function handler(req, res) {
       return res.status(500).send("Failed to update verification status");
     }
 
-    console.log("=== VERIFY SUCCESS ===");
-    return res.status(200).send("Email verified successfully");
+    // 5. JWT 発行
+    console.log("Generating JWT…");
+
+    const jwtToken = jwt.sign(
+      {
+        adminId: user.id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    console.log("JWT GENERATED:", jwtToken ? "YES" : "NO");
+
+    // 6. Cookie に保存
+    console.log("Setting cookie…");
+
+    res.setHeader(
+      "Set-Cookie",
+      serialize("admin_session", jwtToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 12, // 12時間
+      })
+    );
+
+    console.log("COOKIE SET");
+
+    // 7. 管理画面へリダイレクト
+    console.log("=== VERIFY SUCCESS → REDIRECTING ===");
+
+    return res.redirect("/admin/dashboard");
   } catch (err) {
     console.error("=== VERIFY API FATAL ERROR ===", err);
     return res.status(500).send("Server error");
