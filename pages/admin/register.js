@@ -38,7 +38,7 @@ export default function AdminRegister() {
       const data = await res.json();
 
       if (data.verified) {
-        window.location.href = "/admin/login";
+        window.location.href = "/admin/dashboard";
       }
     }, 5000);
 

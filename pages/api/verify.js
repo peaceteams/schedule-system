@@ -109,7 +109,7 @@ export default async function handler(req, res) {
     // 7. 管理画面へリダイレクト
     console.log("=== VERIFY SUCCESS → REDIRECTING ===");
 
-    return res.redirect("/admin/dashboard");
+    return res.redirect("/verified");
   } catch (err) {
     console.error("=== VERIFY API FATAL ERROR ===", err);
     return res.status(500).send("Server error");
