@@ -47,10 +47,21 @@ export default async function handler(req, res) {
   await sendMail({
     to: email,
     subject: "管理者登録の確認",
-    html: 
-    `
-      <p>以下のリンクをクリックしてメールアドレスを確認してください。</p>
-      <p><a href="${verifyUrl}">${verifyUrl}</a></p>
+    html: `
+      <p>以下のボタンをクリックしてメールアドレスを確認してください。</p>
+      <a href="${verifyUrl}"
+        style="
+          display: inline-block;
+          padding: 12px 20px;
+          background-color: #4CAF50;
+          color: white;
+          text-decoration: none;
+          border-radius: 6px;
+          font-size: 16px;
+          font-weight: bold;
+        ">
+        メールアドレスを確認する
+      </a>
       <p>このリンクは5分間有効です。</p>
     `
   });
