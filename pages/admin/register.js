@@ -13,6 +13,9 @@ export default function AdminRegister() {
   const [isWaiting, setIsWaiting] = useState(false);
   const [adminId, setAdminId] = useState(null);
 
+  // カウントダウン（300秒 = 5分）
+  const [remaining, setRemaining] = useState(300);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -26,14 +29,32 @@ export default function AdminRegister() {
 
     if (res.ok) {
       setMessage("確認メールを送信しました。");
-      setAdminId(data.id);   // ← ID を保存
+      setAdminId(data.id);
       setIsWaiting(true);
+      setRemaining(300); // カウントダウン開始
     } else {
       setMessage(data.error || "登録に失敗しました。");
     }
   };
 
-  // ★ ID で Realtime を購読（最強に安定）
+  // ★ カウントダウン
+  useEffect(() => {
+    if (!isWaiting) return;
+
+    if (remaining <= 0) {
+    console.log("⏳ カウントダウン終了 → 自動削除を実行");
+    requestDelete(); // ← ここで削除 API を叩く
+    return;
+    }
+
+    const timer = setTimeout(() => {
+      setRemaining((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [isWaiting, remaining]);
+
+  // ★ Realtime（UPDATE → 認証成功）
   useEffect(() => {
     if (!isWaiting || !adminId) return;
 
@@ -50,20 +71,36 @@ export default function AdminRegister() {
         },
         async (payload) => {
           if (payload.new.is_verified === true) {
-            console.log("📡 verify API を叩きます:", payload.new.verification_token);
-            const res = await fetch(`/api/verify?token=${payload.new.verification_token}`, {
+            console.log("🎉 認証成功 → verify API を叩きます");
+
+            await fetch(`/api/verify?token=${payload.new.verification_token}`, {
               method: "GET",
-              credentials: "include", // Cookie を受け取るために必須
+              credentials: "include",
             });
-            // Cookie が保存されたか確認
-            const cookies = document.cookie;
-            if (cookies.includes("admin_session")) {
-              console.log("🍪 Cookie 保存成功:", cookies);
-            } else {
-              console.log("⚠ Cookie が保存されていません:", cookies);
-            }
 
             window.location.href = "/admin/dashboard";
+          }
+        }
+      )
+      // ★ DELETE（期限切れ → 自動削除）
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "admins",
+        },
+        (payload) => {
+          const deleted = payload.old;
+
+          if (deleted.id === adminId) {
+            console.log("🗑️ 自動削除を検知:", deleted);
+
+            setMessage("認証されなかったため、登録をリセットしました。");
+
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
           }
         }
       )
@@ -76,6 +113,10 @@ export default function AdminRegister() {
       supabase.removeChannel(channel);
     };
   }, [isWaiting, adminId]);
+
+  // カウントダウン表示用
+  const minutes = Math.floor(remaining / 60);
+  const seconds = (remaining % 60).toString().padStart(2, "0");
 
   return (
     <div style={{ maxWidth: 400, margin: "40px auto" }}>
@@ -106,6 +147,12 @@ export default function AdminRegister() {
       </form>
 
       {message && <p style={{ marginTop: 10 }}>{message}</p>}
+
+      {isWaiting && (
+        <p style={{ marginTop: 10, fontSize: "18px", fontWeight: "bold" }}>
+          認証期限: {minutes}:{seconds}
+        </p>
+      )}
     </div>
   );
 }
