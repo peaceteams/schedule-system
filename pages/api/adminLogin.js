@@ -1,56 +1,52 @@
+import supabase from "@/lib/db";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
 export default async function handler(req, res) {
-    const body = JSON.parse(req.body || "{}");
-    const { password } = body;
+  const { email, password } = req.body;
 
-    const repo = process.env.GH_REPO;
-    const token = process.env.GH_PAT;
+  // 1. admin を取得
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("*")
+    .eq("email", email)
+    .single();
 
-    // 1. ロックアウト確認
-    const lockoutUrl = `https://api.github.com/repos/${repo}/contents/lockout.json`;
-    const lockoutRes = await fetch(lockoutUrl, {
-        headers: { Authorization: `Bearer ${token}` }
+  if (!admin) {
+    return res.status(400).json({ error: "メールが見つかりません" });
+  }
+
+  // 2. パスワードチェック
+  const ok = await bcrypt.compare(password, admin.password_hash);
+  if (!ok) {
+    return res.status(400).json({ error: "パスワードが違います" });
+  }
+
+  // 3. 未認証なら verify メールを再送
+  if (!admin.is_verified) {
+    return res.status(400).json({
+      error: "メール認証が完了していません。登録メールを確認してください。",
     });
-    const lockoutJson = await lockoutRes.json();
-    const lockout = JSON.parse(Buffer.from(lockoutJson.content, "base64").toString());
+  }
 
-    if (lockout.locked === true) {
-        return res.status(403).json({
-            ok: false,
-            message: "現在ログインできません（ロックアウト中）"
-        });
-    }
+  // 4. JWT 発行
+  const jwtToken = jwt.sign(
+    { adminId: admin.id },
+    process.env.JWT_SECRET,
+    { expiresIn: "12h" }
+  );
 
-    // 2. パスワードチェック
-    if (password !== process.env.ADMIN_PASSWORD) {
-        return res.status(401).json({ ok: false, message: "認証エラー" });
-    }
+  // 5. Cookie セット
+  res.setHeader(
+    "Set-Cookie",
+    serialize("admin_session", jwtToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 12,
+    })
+  );
 
-    // 3. 新しい sessionToken を発行
-    const sessionToken = "st_" + Math.random().toString(36).slice(2);
-
-    // 4. sessionTokens.json を更新
-    const tokensUrl = `https://api.github.com/repos/${repo}/contents/sessionTokens.json`;
-    const tokensRes = await fetch(tokensUrl, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
-    const tokensJson = await tokensRes.json();
-    const sha = tokensJson.sha;
-    const tokens = JSON.parse(Buffer.from(tokensJson.content, "base64").toString());
-
-    tokens[sessionToken] = true;
-
-    await fetch(tokensUrl, {
-        method: "PUT",
-        headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            message: "Add session token",
-            content: Buffer.from(JSON.stringify(tokens, null, 2)).toString("base64"),
-            sha
-        })
-    });
-
-    return res.status(200).json({ ok: true, sessionToken });
+  return res.status(200).json({ ok: true });
 }

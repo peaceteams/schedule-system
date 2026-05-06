@@ -35,7 +35,7 @@ export default function AdminRegister() {
       setMessage("確認メールを送信しました。");
       setAdminId(data.id);
       setIsWaiting(true);
-      setRemaining(10); // カウントダウン開始
+      setRemaining(300); // カウントダウン開始
     } else {
       setMessage(data.error || "登録に失敗しました。");
     }
