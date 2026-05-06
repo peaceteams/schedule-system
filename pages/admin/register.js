@@ -12,12 +12,14 @@ export default function AdminRegister() {
   const [message, setMessage] = useState("");
   const [isWaiting, setIsWaiting] = useState(false);
   const [adminId, setAdminId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // カウントダウン（300秒 = 5分）
   const [remaining, setRemaining] = useState(300);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true); // ← ローディング開始
 
     const res = await fetch("/api/adminRegister", {
       method: "POST",
@@ -26,6 +28,8 @@ export default function AdminRegister() {
     });
 
     const data = await res.json();
+
+    setIsLoading(false); // ← ローディング終了
 
     if (res.ok) {
       setMessage("確認メールを送信しました。");
@@ -160,9 +164,21 @@ export default function AdminRegister() {
           required
           style={{ width: "100%", margin: "8px 0", padding: "8px" }}
         />
-
-        <button type="submit" style={{ width: "100%", padding: "10px" }}>
-          登録
+        <button
+          type="submit"
+          style={{
+            width: "100%",
+            padding: "10px",
+            opacity: isLoading ? 0.7 : 1,
+            cursor: isLoading ? "not-allowed" : "pointer",
+          }}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <span className="dot-loader"></span>
+          ) : (
+            "登録"
+          )}
         </button>
       </form>
 
