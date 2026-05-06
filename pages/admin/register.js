@@ -6,6 +6,25 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+async function requestDelete() {
+  if (!adminId) return;
+
+  console.log("🗑️ requestDelete 実行:", adminId);
+
+  const res = await fetch("/api/deleteAdmin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ adminId }),
+  });
+
+  if (res.ok) {
+    setMessage("登録をキャンセルしました。");
+    setTimeout(() => window.location.reload(), 2000);
+  } else {
+    setMessage("削除に失敗しました。");
+  }
+}
+
 export default function AdminRegister() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
