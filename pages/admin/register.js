@@ -48,7 +48,7 @@ export default function AdminRegister() {
           schema: "public",
           table: "admins",
         },
-        (payload) => {
+        async (payload) => {
           console.log("🔥 UPDATE:", payload);
           console.log("🧪 new:", payload.new);
           console.log("🧪 old:", payload.old);
@@ -56,7 +56,15 @@ export default function AdminRegister() {
           console.log("🧪 typeof:", typeof payload.new.is_verified);
 
           if (payload.new.is_verified === true) {
-            console.log("🎉 is_verified が true → 遷移します");
+            console.log("🎉 is_verified が true → PC が verify API を叩きます");
+
+            // PC が自分で verify API を叩いて Cookie を受け取る
+            await fetch(`/api/admin/verify?token=${payload.new.verification_token}`, {
+              method: "GET",
+              credentials: "include", // Cookie を受け取るために必須
+            });
+
+            // Cookie が保存されたのでダッシュボードへ
             window.location.href = "/admin/dashboard";
           } else {
             console.log("⚠ UPDATE は来たが is_verified は false");
