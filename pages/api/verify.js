@@ -29,7 +29,6 @@ export default async function handler(req, res) {
     .from("admins")
     .update({
       is_verified: true,
-      verified_at: new Date().toISOString(), // ← UPDATE を必ず発火させる
     })
     .eq("id", admin.id)
     .select()
