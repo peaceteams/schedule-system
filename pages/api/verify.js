@@ -1,54 +1,28 @@
-import supabase from "@/lib/db";
-import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
+import { supabase } from "@/lib/supabase";
+import jwt from "jsonwebtoken";
 
 export default async function handler(req, res) {
-  console.log("=== VERIFY API START ===");
-
   const token = req.query.token;
-  console.log("TOKEN RECEIVED:", token);
 
-  // トークン一致チェック
-  const { data: admin, error: findError } = await supabase
+  const { data: admin, error } = await supabase
     .from("admins")
     .select("*")
     .eq("verification_token", token)
-    .maybeSingle();
-
-  console.log("FIND ADMIN RESULT:", { admin, findError });
+    .single();
 
   if (!admin) {
-    console.log("ERROR: Invalid token");
     return res.status(400).send("Invalid token");
   }
 
-  // ★ UPDATE 実行ログ
-  console.log("🔧 UPDATE 実行:", admin.id);
-
-  const { data: updated, error: updateError } = await supabase
-    .from("admins")
-    .update({
-      is_verified: true,
-    })
-    .eq("id", admin.id)
-    .select()
-    .single();
-
-  // ★ UPDATE 結果ログ
-  console.log("🔧 UPDATE 結果:", { updated, updateError });
-
-  if (updateError) {
-    console.log("UPDATE ERROR:", updateError);
-    return res.status(500).send("Update failed");
-  }
-
-  // JWT 発行
+  // JWT を発行
   const jwtToken = jwt.sign(
-    { id: admin.id, email: admin.email },
+    { adminId: admin.id },
     process.env.JWT_SECRET,
     { expiresIn: "12h" }
   );
 
+  // PC に Cookie をセット
   res.setHeader(
     "Set-Cookie",
     serialize("admin_session", jwtToken, {
@@ -60,5 +34,7 @@ export default async function handler(req, res) {
     })
   );
 
-  return res.redirect(302, "/verified");
+  // サーバー側リダイレクト
+  res.writeHead(302, { Location: "/admin/dashboard" });
+  res.end();
 }

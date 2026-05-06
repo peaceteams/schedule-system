@@ -79,7 +79,7 @@ export default async function handler(req, res) {
     console.log("INSERT SUCCESS. NEW ADMIN ID:", data.id);
 
     // メール送信
-    const verifyUrl = `${process.env.BASE_URL}/api/verify?token=${token}`;
+    const verifyUrl = `${process.env.BASE_URL}/api/verify-email?token=${token}`;
     console.log("VERIFY URL:", verifyUrl);
 
     try {

@@ -49,25 +49,23 @@ export default function AdminRegister() {
           table: "admins",
         },
         async (payload) => {
-          console.log("🔥 UPDATE:", payload);
-          console.log("🧪 new:", payload.new);
-          console.log("🧪 old:", payload.old);
-          console.log("🧪 is_verified:", payload.new.is_verified);
-          console.log("🧪 typeof:", typeof payload.new.is_verified);
-
           if (payload.new.is_verified === true) {
             console.log("🎉 is_verified が true → PC が verify API を叩きます");
 
-            // PC が自分で verify API を叩いて Cookie を受け取る
-            await fetch(`/api/admin/verify?token=${payload.new.verification_token}`, {
+            const res = await fetch(`/api/admin/verify?token=${payload.new.verification_token}`, {
               method: "GET",
               credentials: "include", // Cookie を受け取るために必須
             });
 
-            // Cookie が保存されたのでダッシュボードへ
+            // Cookie が保存されたか確認
+            const cookies = document.cookie;
+            if (cookies.includes("admin_session")) {
+              console.log("🍪 Cookie 保存成功:", cookies);
+            } else {
+              console.log("⚠ Cookie が保存されていません:", cookies);
+            }
+
             window.location.href = "/admin/dashboard";
-          } else {
-            console.log("⚠ UPDATE は来たが is_verified は false");
           }
         }
       )
