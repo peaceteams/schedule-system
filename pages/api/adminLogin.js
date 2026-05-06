@@ -14,19 +14,14 @@ export default async function handler(req, res) {
     .single();
 
     if (!admin) {
-    return res.status(400).json({ error: "メールが見つかりません" });
+        return res.status(400).json({ error: "メールが見つかりません" });
     }
 
     // 2. パスワードチェック
     const ok = await bcrypt.compare(password, admin.password_hash);
     if (!ok) {
-    return res.status(400).json({ error: "パスワードが違います" });
+        return res.status(400).json({ error: "パスワードが違います" });
     }
-
-    console.log("BODY:", req.body);
-    console.log("email:", req.body.email);
-    console.log("password:", req.body.password);
-
 
     // 3. verification_token を発行（毎回）
     const token = crypto.randomBytes(32).toString("hex");
@@ -39,7 +34,7 @@ export default async function handler(req, res) {
     .eq("id", admin.id);
 
     // 4. メール送信
-    const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/verify-email?token=${token}`;
+    const verifyUrl = `${process.env.BASE_URL}/api/verify-email?token=${token}`;
     await sendMail({
         to: email,
         subject: "ログイン認証",
@@ -60,7 +55,7 @@ export default async function handler(req, res) {
           </a>
           <p>このリンクは5分間有効です。</p>
         `
-      });
+    });
 
     // 5. adminId を返す（Realtime 用）
     return res.status(200).json({ ok: true, adminId: admin.id });
