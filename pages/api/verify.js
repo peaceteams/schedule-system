@@ -60,16 +60,5 @@ export default async function handler(req, res) {
     })
   );
 
-  console.log("=== VERIFY API END (SUCCESS) ===");
-
-  res.setHeader("Content-Type", "text/html");
-  return res.end(`
-    <html>
-      <body>
-        <script>
-          window.location.href = "/verified";
-        </script>
-      </body>
-    </html>
-  `);
+  return res.redirect(302, "/verified");
 }
