@@ -4,7 +4,8 @@ import crypto from "crypto";
 import { sendMail } from "@/lib/sendMail";
 
 export default async function handler(req, res) {
-  const { email, password } = req.body;
+  const body = JSON.parse(req.body || "{}");
+  const { email, password } = body;
 
   // 1. admin を取得
   const { data: admin } = await supabase
