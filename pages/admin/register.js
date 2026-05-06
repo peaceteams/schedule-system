@@ -47,7 +47,6 @@ export default function AdminRegister() {
           event: "UPDATE",
           schema: "public",
           table: "admins",
-          filter: `id=eq.${adminId}`,
         },
         (payload) => {
           console.log("🔥 Realtime UPDATE 受信:", payload);
