@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 export default async function handler(req, res) {
   const token = req.query.token;
 
-  const { data: admin, error } = await supabase
+  const { data: admin } = await supabase
     .from("admins")
     .select("*")
     .eq("verification_token", token)
@@ -15,14 +15,14 @@ export default async function handler(req, res) {
     return res.status(400).send("Invalid token");
   }
 
-  // JWT を発行
+  // JWT 発行
   const jwtToken = jwt.sign(
     { adminId: admin.id },
     process.env.JWT_SECRET,
     { expiresIn: "12h" }
   );
 
-  // Cookie をセット
+  // Cookie セット
   res.setHeader(
     "Set-Cookie",
     serialize("admin_session", jwtToken, {
@@ -34,7 +34,6 @@ export default async function handler(req, res) {
     })
   );
 
-  // サーバー側リダイレクト
   res.writeHead(302, { Location: "/admin/dashboard" });
   res.end();
 }

@@ -1,6 +1,7 @@
 import supabase from "@/lib/db";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import sendMail from "@/lib/sendMail";
 
 export default async function handler(req, res) {
   const { email, password } = req.body;
@@ -22,31 +23,21 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "パスワードが違います" });
   }
 
-  // 3. 未認証なら verify メールを再送
-  if (!admin.is_verified) {
-    return res.status(400).json({
-      error: "メール認証が完了していません。登録メールを確認してください。",
-    });
-  }
+  // 3. verification_token を発行（毎回）
+  const token = crypto.randomBytes(32).toString("hex");
 
-  // 4. JWT 発行
-  const jwtToken = jwt.sign(
-    { adminId: admin.id },
-    process.env.JWT_SECRET,
-    { expiresIn: "12h" }
-  );
-
-  // 5. Cookie セット
-  res.setHeader(
-    "Set-Cookie",
-    serialize("admin_session", jwtToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 12,
+  await supabase
+    .from("admins")
+    .update({
+      verification_token: token,
+      is_verified: false, // ← 毎回 false に戻す
     })
-  );
+    .eq("id", admin.id);
 
-  return res.status(200).json({ ok: true });
+  // 4. メール送信
+  const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/verify-email?token=${token}`;
+  await sendMail(email, "ログイン認証", `以下のURLを開いて認証してください:\n${verifyUrl}`);
+
+  // 5. adminId を返す（Realtime 用）
+  return res.status(200).json({ ok: true, adminId: admin.id });
 }
