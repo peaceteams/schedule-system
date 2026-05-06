@@ -49,7 +49,11 @@ export default function AdminRegister() {
           table: "admins",
         },
         (payload) => {
-          console.log("🔥 Realtime UPDATE 受信:", payload);
+          console.log("🔥 UPDATE:", payload);
+          console.log("🧪 new:", payload.new);
+          console.log("🧪 old:", payload.old);
+          console.log("🧪 is_verified:", payload.new.is_verified);
+          console.log("🧪 typeof:", typeof payload.new.is_verified);
 
           if (payload.new.is_verified === true) {
             console.log("🎉 is_verified が true → 遷移します");
