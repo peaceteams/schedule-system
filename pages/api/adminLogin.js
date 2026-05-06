@@ -1,7 +1,7 @@
 import supabase from "@/lib/db";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import sendMail from "@/lib/sendMail";
+import { sendMail } from "@/lib/sendMail";
 
 export default async function handler(req, res) {
   const { email, password } = req.body;
