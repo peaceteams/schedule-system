@@ -1,5 +1,5 @@
 import { serialize } from "cookie";
-import { supabase } from "../../../lib/supabase";
+import { supabase } from "../../lib/db";
 import jwt from "jsonwebtoken";
 
 export default async function handler(req, res) {
