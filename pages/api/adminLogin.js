@@ -30,7 +30,6 @@ export default async function handler(req, res) {
     .from("admins")
     .update({
       verification_token: token,
-      is_verified: false, // ← 毎回 false に戻す
     })
     .eq("id", admin.id);
 
