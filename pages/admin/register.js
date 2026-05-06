@@ -50,13 +50,11 @@ export default function AdminRegister() {
         },
         async (payload) => {
           if (payload.new.is_verified === true) {
-            console.log("🎉 is_verified が true → PC が verify API を叩きます");
-
-            const res = await fetch(`/api/admin/verify?token=${payload.new.verification_token}`, {
+            console.log("📡 verify API を叩きます:", payload.new.verification_token);
+            const res = await fetch(`/api/verify?token=${payload.new.verification_token}`, {
               method: "GET",
               credentials: "include", // Cookie を受け取るために必須
             });
-
             // Cookie が保存されたか確認
             const cookies = document.cookie;
             if (cookies.includes("admin_session")) {

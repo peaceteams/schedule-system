@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     { expiresIn: "12h" }
   );
 
-  // PC に Cookie をセット
+  // Cookie をセット
   res.setHeader(
     "Set-Cookie",
     serialize("admin_session", jwtToken, {
