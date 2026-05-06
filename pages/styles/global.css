@@ -1,0 +1,43 @@
+.dot-loader {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: white;
+  animation: dotFlashing 1s infinite linear alternate;
+  position: relative;
+}
+
+.dot-loader::before,
+.dot-loader::after {
+  content: "";
+  display: inline-block;
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: white;
+}
+
+.dot-loader::before {
+  left: -8px;
+  animation: dotFlashing 1s infinite linear alternate;
+  animation-delay: 0.2s;
+}
+
+.dot-loader::after {
+  left: 8px;
+  animation: dotFlashing 1s infinite linear alternate;
+  animation-delay: 0.4s;
+}
+
+@keyframes dotFlashing {
+  0% {
+    background-color: white;
+  }
+  50%,
+  100% {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+}

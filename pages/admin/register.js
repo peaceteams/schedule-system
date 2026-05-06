@@ -31,7 +31,7 @@ export default function AdminRegister() {
       setMessage("確認メールを送信しました。");
       setAdminId(data.id);
       setIsWaiting(true);
-      setRemaining(300); // カウントダウン開始
+      setRemaining(10); // カウントダウン開始
     } else {
       setMessage(data.error || "登録に失敗しました。");
     }
@@ -51,7 +51,7 @@ export default function AdminRegister() {
 
     if (res.ok) {
       setMessage("登録をキャンセルしました。");
-      setTimeout(() => window.location.reload(), 2000);
+      setTimeout(() => window.location.reload(), 3000);
     } else {
       setMessage("削除に失敗しました。");
     }
