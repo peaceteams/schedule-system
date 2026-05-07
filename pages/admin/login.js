@@ -18,37 +18,6 @@ export default function AdminLogin({ hasCookie }) {
     const [isLoading, setIsLoading] = useState(false);
 
     // -----------------------------
-    // メール入力時に登録済みチェック
-    // -----------------------------
-    useEffect(() => {
-    const check = async () => {
-        if (!email) {
-        setIsRegistered(null);
-        return;
-        }
-
-        const res = await fetch("/api/checkAdmin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-        });
-
-        const data = await res.json();
-        setIsRegistered(data.exists);
-    };
-
-    check();
-    }, [email]);
-
-    // ブラウザのオートフィルを検知する
-    useEffect(() => {
-        const emailInput = document.querySelector("input[type='email']");
-        if (emailInput && emailInput.value !== email) {
-        setEmail(emailInput.value);
-        }
-    }, []);
-
-    // -----------------------------
     // ログインボタン押下
     // -----------------------------
     async function handleLogin(e) {
@@ -159,14 +128,9 @@ export default function AdminLogin({ hasCookie }) {
             disabled={isLoading}
         >
             {isLoading ? (
-            <span className="dot-loader"></span>
-            ) : isRegistered === null ? (
-            "ログイン / 登録"
-            ) : isRegistered ? (
-            "ログイン"
-            ) : (
-            "登録"
-            )}
+                <span className="dot-loader"></span>
+            ) : "ログイン / 登録"
+            };
         </button>
         </form>
 
