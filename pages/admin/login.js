@@ -60,9 +60,10 @@ export default function AdminLogin({ hasCookie }) {
             setAdminId(data.adminId);
             setExpiresAt(data.expiresAt);
 
-            const clientExpiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+            const clientExpiresAt = new Date(Date.now() + 0.1 * 60 * 1000).toISOString();
             setExpiresAt(clientExpiresAt);
-            setCountdown("5:00");
+
+            setCountdown("0:10");
             setIsWaiting(true);
             setMessage("メールの認証を待っています…");
         } else {
