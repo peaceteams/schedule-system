@@ -127,10 +127,7 @@ export default function AdminLogin({ hasCookie }) {
             }}
             disabled={isLoading}
         >
-            {isLoading ? (
-                <span className="dot-loader"></span>
-            ) : "ログイン / 登録"
-            };
+            {isLoading ? (<span className="dot-loader"></span>) : "登録 / ログイン"}
         </button>
         </form>
 
