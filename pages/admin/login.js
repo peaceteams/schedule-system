@@ -59,7 +59,6 @@ export default function AdminLogin({ hasCookie }) {
         if (data.ok) {
             setAdminId(data.adminId);
             setExpiresAt(data.expiresAt);
-            setCountdown("5:00");
             setIsWaiting(true);
             setMessage("メールの認証を待っています…");
         } else {
@@ -75,65 +74,45 @@ export default function AdminLogin({ hasCookie }) {
 
         const end = new Date(expiresAt).getTime();
 
-        // ★ 1 秒後に初回更新（4:59）
+        // ★ 最初は必ず 5:00 を表示
+        setCountdown("5:00");
+
+        // ★ 1秒後に「4:59」を強制表示
         const firstTimer = setTimeout(() => {
-            const updateCountdown = () => {
-            const now = Date.now();
-            const diff = Math.max(0, end - now);
+            setCountdown("4:59");
 
-            const m = Math.floor(diff / 60000);
-            const s = Math.floor((diff % 60000) / 1000);
-
-            setCountdown(`${m}:${s.toString().padStart(2, "0")}`);
-
-            return diff;
-            };
-
-            // 初回更新
-            const firstDiff = updateCountdown();
-
-            if (firstDiff <= 0) {
-            setMessage("認証期限が切れました。");
-            fetch("/api/deleteUnverified", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ adminId }),
-            });
-            return;
-            }
-
-            // ★ ここから通常の 1 秒ごとの更新
+            // ★ ここから実際の expiresAt に同期
             const interval = setInterval(() => {
-            const diff = updateCountdown();
+                const now = Date.now();
+                const diff = Math.max(0, end - now);
 
-            if (diff <= 0) {
-                clearInterval(timer);
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
 
-                if (isNewUser) {
-                    // ★ 新規登録 → クラウドから削除
+                setCountdown(`${m}:${s.toString().padStart(2, "0")}`);
+
+                if (diff <= 0) {
+                    clearInterval(interval);
+
+                    if (isNewUser) {
                     setMessage("認証期限が切れました。アカウントを削除します…");
-
                     fetch("/api/deleteUnverified", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ adminId }),
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ adminId }),
                     });
-                } else {
-                    // ★ ログイン → 自動リロード
+                    } else {
                     setMessage("認証期限が切れました。再度ログインしてください。");
-                    setTimeout(() => {
-                    window.location.reload();
-                    }, 1500);
+                    setTimeout(() => window.location.reload(), 1500);
+                    }
                 }
-            }
+            }, 1000);
+
+            return () => clearInterval(interval);
         }, 1000);
 
-        return () => clearInterval(interval);
-    }, 1000);
-
-    return () => clearTimeout(firstTimer);
+        return () => clearTimeout(firstTimer);
     }, [isWaiting, expiresAt]);
-
 
     // -----------------------------
     // Realtime 監視 → 認証完了で自動ログイン
