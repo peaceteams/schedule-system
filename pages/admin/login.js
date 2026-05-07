@@ -132,6 +132,24 @@ export default function AdminLogin({ hasCookie }) {
         </form>
 
         {message && <p style={{ marginTop: 10 }}>{message}</p>}
+
+        {isWaiting && (
+        <div
+            style={{
+            marginTop: "15px",
+            padding: "10px",
+            background: "#fff3cd",
+            border: "1px solid #ffeeba",
+            borderRadius: "6px",
+            color: "#856404",
+            fontWeight: "bold",
+            textAlign: "center",
+            }}
+        >
+            認証期限: {countdown}
+        </div>
+        )}
+
     </div>
     );
 }
