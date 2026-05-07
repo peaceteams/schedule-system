@@ -42,12 +42,10 @@ export default function AdminLogin({ hasCookie }) {
 
     // ブラウザのオートフィルを検知する
     useEffect(() => {
-        setTimeout(() => {
-            const emailInput = document.querySelector("input[type='email']");
-            if (emailInput && emailInput.value !== email) {
-            setEmail(emailInput.value);
-            }
-        }, 100);
+        const emailInput = document.querySelector("input[type='email']");
+        if (emailInput && emailInput.value !== email) {
+        setEmail(emailInput.value);
+        }
     }, []);
 
     // -----------------------------
