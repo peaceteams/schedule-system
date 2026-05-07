@@ -45,24 +45,42 @@ export default function AdminLogin() {
         e.preventDefault();
         setIsLoading(true);
 
-        // Cookie がある → directLogin
-        if (document.cookie.includes("admin_session")) {
+        // Cookie がある → メール認証なしでログイン
+        if (hasCookie) {
             const res = await fetch("/api/directLogin", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
             });
 
             const data = await res.json();
             setIsLoading(false);
 
             if (data.ok) {
-            window.location.href = "/admin/dashboard";
-            return;
+                window.location.href = "/admin/dashboard";
+                return;
             } else {
-            setMessage(data.error);
-            return;
+                setMessage(data.error);
+                return;
             }
+        }
+
+        // Cookie がない → メール認証フロー
+        const res = await fetch("/api/adminLogin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+        setIsLoading(false);
+
+        if (data.ok) {
+            setAdminId(data.adminId);
+            setIsWaiting(true);
+            setMessage("メールの認証を待っています…");
+        } else {
+            setMessage(data.error);
         }
 
         // Cookie がない → メール認証フロー
