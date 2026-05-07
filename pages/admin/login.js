@@ -19,6 +19,7 @@ export default function AdminLogin({ hasCookie }) {
     // ★ カウントダウン用
     const [expiresAt, setExpiresAt] = useState(null);
     const [countdown, setCountdown] = useState("");
+    const [isNewUser, setIsNewUser] = useState(null);
 
     // -----------------------------
     // ログインボタン押下
@@ -58,6 +59,7 @@ export default function AdminLogin({ hasCookie }) {
         if (data.ok) {
             setAdminId(data.adminId);
             setExpiresAt(data.expiresAt);
+            setCountdown("5:00");
             setIsWaiting(true);
             setMessage("メールの認証を待っています…");
         } else {
@@ -73,8 +75,9 @@ export default function AdminLogin({ hasCookie }) {
 
         const end = new Date(expiresAt).getTime();
 
-        // ★ 初回だけ即時に countdown を更新（←これが重要）
-        const updateCountdown = () => {
+        // ★ 1 秒後に初回更新（4:59）
+        const firstTimer = setTimeout(() => {
+            const updateCountdown = () => {
             const now = Date.now();
             const diff = Math.max(0, end - now);
 
@@ -84,39 +87,51 @@ export default function AdminLogin({ hasCookie }) {
             setCountdown(`${m}:${s.toString().padStart(2, "0")}`);
 
             return diff;
-        };
+            };
 
-        // ★ まず即時実行
-        const firstDiff = updateCountdown();
+            // 初回更新
+            const firstDiff = updateCountdown();
 
-        // 期限切れなら即終了
-        if (firstDiff <= 0) {
+            if (firstDiff <= 0) {
             setMessage("認証期限が切れました。");
-            fetch("/api/deleteUnverified", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ adminId }),
-            });
-            return;
-        }
-
-        // ★ 1 秒ごとに更新
-        const timer = setInterval(() => {
-            const diff = updateCountdown();
-
-            if (diff <= 0) {
-            clearInterval(timer);
-            setMessage("認証期限が切れました。");
-
             fetch("/api/deleteUnverified", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ adminId }),
             });
+            return;
+            }
+
+            // ★ ここから通常の 1 秒ごとの更新
+            const interval = setInterval(() => {
+            const diff = updateCountdown();
+
+            if (diff <= 0) {
+                clearInterval(timer);
+
+                if (isNewUser) {
+                    // ★ 新規登録 → クラウドから削除
+                    setMessage("認証期限が切れました。アカウントを削除します…");
+
+                    fetch("/api/deleteUnverified", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ adminId }),
+                    });
+                } else {
+                    // ★ ログイン → 自動リロード
+                    setMessage("認証期限が切れました。再度ログインしてください。");
+                    setTimeout(() => {
+                    window.location.reload();
+                    }, 1500);
+                }
             }
         }, 1000);
 
-        return () => clearInterval(timer);
+        return () => clearInterval(interval);
+    }, 1000);
+
+    return () => clearTimeout(firstTimer);
     }, [isWaiting, expiresAt]);
 
 

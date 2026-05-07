@@ -27,6 +27,7 @@ export default async function handler(req, res) {
         is_verified: false,
         verification_token: token,
         verification_expires: expires,
+        isNewUser: true,
       })
       .select()
       .single();
@@ -111,6 +112,7 @@ export default async function handler(req, res) {
   return res.status(200).json({
     ok: true,
     adminId: existing.id,
-    expiresAt: expires
+    expiresAt: expires,
+    isNewUser: false
   });
 }
