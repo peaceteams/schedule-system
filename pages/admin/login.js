@@ -29,28 +29,28 @@ export default function AdminLogin({ hasCookie }) {
         setIsLoading(true);
 
         if (hasCookie) {
-        const res = await fetch("/api/directLogin", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-        });
+            const res = await fetch("/api/directLogin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
 
-        const data = await res.json();
-        setIsLoading(false);
+            const data = await res.json();
+            setIsLoading(false);
 
-        if (data.ok) {
-            window.location.href = "/admin/dashboard";
-            return;
-        } else {
-            setMessage(data.error);
-            return;
-        }
+            if (data.ok) {
+                window.location.href = "/admin/dashboard";
+                return;
+            } else {
+                setMessage(data.error);
+                return;
+            }
         }
 
         const res = await fetch("/api/adminLoginOrRegister", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ email, password, expiresInSeconds: 10 }),
         });
 
         const data = await res.json();
@@ -60,10 +60,9 @@ export default function AdminLogin({ hasCookie }) {
             setAdminId(data.adminId);
             setExpiresAt(data.expiresAt);
 
-            const clientExpiresAt = new Date(Date.now() + 0.1 * 60 * 1000).toISOString();
+            const clientExpiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
             setExpiresAt(clientExpiresAt);
 
-            setCountdown("0:10");
             setIsWaiting(true);
             setMessage("メールの認証を待っています…");
         } else {

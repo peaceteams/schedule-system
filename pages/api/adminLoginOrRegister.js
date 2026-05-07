@@ -13,7 +13,8 @@ export default async function handler(req, res) {
     .single();
 
   const token = crypto.randomBytes(32).toString("hex");
-  const expires = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  const expiresIn = req.body.expiresInSeconds || 300; // ★ デフォルト5分
+  const expires = new Date(Date.now() + expiresIn * 1000).toISOString();
 
   // -----------------------------
   // ① 未登録 → 新規登録フロー
