@@ -33,6 +33,8 @@ export default async function handler(req, res) {
 
     if (error) return res.status(400).json({ ok: false, error: "登録に失敗しました" });
 
+    const verifyUrl = `${process.env.BASE_URL}/api/verify-email?token=${token}`;
+
     await sendMail({
         to: email,
         subject: "管理者登録の確認",
