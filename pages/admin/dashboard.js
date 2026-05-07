@@ -5,6 +5,14 @@ export default function Dashboard({ admin }) {
     <div>
       <h1>Dashboard</h1>
       <p>ログイン中: {admin.adminId}</p>
+      <button
+        onClick={async () => {
+          await fetch("/api/logout", { method: "POST" });
+          window.location.href = "/admin/login";
+        }}
+      >
+        ログアウト
+      </button>
     </div>
   );
 }
