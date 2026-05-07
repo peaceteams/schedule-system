@@ -1,4 +1,4 @@
-import supabase from "@/lib/supabase";
+import supabase from "@/lib/db";
 
 export default async function handler(req, res) {
   const { email } = req.body;
