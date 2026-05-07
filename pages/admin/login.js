@@ -21,12 +21,12 @@ export default function AdminLogin({ hasCookie }) {
     // メール入力時に登録済みチェック
     // -----------------------------
     useEffect(() => {
-    if (!email) {
+    const check = async () => {
+        if (!email) {
         setIsRegistered(null);
         return;
-    }
+        }
 
-    const timer = setTimeout(async () => {
         const res = await fetch("/api/checkAdmin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -35,26 +35,19 @@ export default function AdminLogin({ hasCookie }) {
 
         const data = await res.json();
         setIsRegistered(data.exists);
-    }, 300);
+    };
 
-    return () => clearTimeout(timer);
+    check();
     }, [email]);
 
     // ブラウザのオートフィルを検知する
     useEffect(() => {
-    const interval = setInterval(() => {
-        const emailInput = document.querySelector("input[type='email']");
-        const passwordInput = document.querySelector("input[type='password']");
-
-        if (emailInput && emailInput.value !== email) {
-        setEmail(emailInput.value);
-        }
-        if (passwordInput && passwordInput.value !== password) {
-        setPassword(passwordInput.value);
-        }
-    }, 200);
-
-    setTimeout(() => clearInterval(interval), 1500);
+        setTimeout(() => {
+            const emailInput = document.querySelector("input[type='email']");
+            if (emailInput && emailInput.value !== email) {
+            setEmail(emailInput.value);
+            }
+        }, 100);
     }, []);
 
     // -----------------------------
