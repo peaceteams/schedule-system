@@ -84,7 +84,7 @@ export default function AdminLogin({ hasCookie }) {
 
       if (diff <= 0) {
         clearInterval(timer);
-        setMessage("認証期限が切れました。アカウントを削除します…");
+        setMessage("認証期限が切れました。");
 
         fetch("/api/deleteUnverified", {
           method: "POST",
@@ -114,11 +114,10 @@ export default function AdminLogin({ hasCookie }) {
         },
         async (payload) => {
           if (payload.new.id === adminId && payload.new.is_verified === true) {
-            await fetch(`/api/verify-email?token=${payload.new.verification_token}`, {
+            await fetch(`/api/verify?token=${payload.new.verification_token}`, {
               method: "GET",
               credentials: "include",
             });
-
             window.location.href = "/admin/dashboard";
           }
         }
