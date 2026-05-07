@@ -16,6 +16,7 @@ export default function AdminLogin({ hasCookie }) {
     const [isRegistered, setIsRegistered] = useState(null);
     const [isWaiting, setIsWaiting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [expiresAt, setExpiresAt] = useState(null);
     const [countdown, setCountdown] = useState("");
 
     // -----------------------------
