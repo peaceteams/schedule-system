@@ -14,6 +14,18 @@ export default function AdminLogin() {
   const [isWaiting, setIsWaiting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // -----------------------------
+  // 1. Cookie が残っていたら即ダッシュボードへ
+  // -----------------------------
+  useEffect(() => {
+    if (document.cookie.includes("admin_session")) {
+      window.location.href = "/admin/dashboard";
+    }
+  }, []);
+
+  // -----------------------------
+  // 2. ログイン処理（Cookie が無い場合のみ実行）
+  // -----------------------------
   async function handleLogin(e) {
     e.preventDefault();
     setIsLoading(true);
@@ -36,7 +48,9 @@ export default function AdminLogin() {
     }
   }
 
-  // Realtime 監視
+  // -----------------------------
+  // 3. Realtime 監視（adminId 限定）
+  // -----------------------------
   useEffect(() => {
     if (!isWaiting || !adminId) return;
 
@@ -105,4 +119,28 @@ export default function AdminLogin() {
       {message && <p style={{ marginTop: 10 }}>{message}</p>}
     </div>
   );
+}
+
+// -----------------------------
+// 4. SSR 認証（ログイン済みなら login を開けない）
+// -----------------------------
+export async function getServerSideProps({ req }) {
+  const token = req.cookies.admin_session;
+
+  if (token) {
+    const jwt = require("jsonwebtoken");
+    try {
+      jwt.verify(token, process.env.JWT_SECRET);
+      return {
+        redirect: {
+          destination: "/admin/dashboard",
+          permanent: false,
+        },
+      };
+    } catch (e) {
+      // 壊れた JWT → 無視してログイン画面を表示
+    }
+  }
+
+  return { props: {} };
 }
