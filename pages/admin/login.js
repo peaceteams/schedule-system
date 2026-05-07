@@ -16,6 +16,7 @@ export default function AdminLogin({ hasCookie }) {
     const [isRegistered, setIsRegistered] = useState(null);
     const [isWaiting, setIsWaiting] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [countdown, setCountdown] = useState("");
 
     // -----------------------------
     // ログインボタン押下
