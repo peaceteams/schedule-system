@@ -9,181 +9,204 @@ const supabase = createClient(
 );
 
 export default function AdminLogin({ hasCookie }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const [adminId, setAdminId] = useState(null);
-  const [isWaiting, setIsWaiting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [message, setMessage] = useState("");
+    const [adminId, setAdminId] = useState(null);
+    const [isWaiting, setIsWaiting] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-  // ★ カウントダウン用
-  const [expiresAt, setExpiresAt] = useState(null);
-  const [countdown, setCountdown] = useState("");
+    // ★ カウントダウン用
+    const [expiresAt, setExpiresAt] = useState(null);
+    const [countdown, setCountdown] = useState("");
 
-  // -----------------------------
-  // ログインボタン押下
-  // -----------------------------
-  async function handleLogin(e) {
-    e.preventDefault();
-    setIsLoading(true);
+    // -----------------------------
+    // ログインボタン押下
+    // -----------------------------
+    async function handleLogin(e) {
+        e.preventDefault();
+        setIsLoading(true);
 
-    if (hasCookie) {
-      const res = await fetch("/api/directLogin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-      setIsLoading(false);
-
-      if (data.ok) {
-        window.location.href = "/admin/dashboard";
-        return;
-      } else {
-        setMessage(data.error);
-        return;
-      }
-    }
-
-    const res = await fetch("/api/adminLoginOrRegister", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await res.json();
-    setIsLoading(false);
-
-    if (data.ok) {
-      setAdminId(data.adminId);
-      setExpiresAt(data.expiresAt);   // ★ ここが重要
-      setIsWaiting(true);
-      setMessage("メールの認証を待っています…");
-    } else {
-      setMessage(data.error);
-    }
-  }
-
-  // -----------------------------
-  // ★ カウントダウン
-  // -----------------------------
-  useEffect(() => {
-    if (!isWaiting || !expiresAt) return;
-
-    const end = new Date(expiresAt).getTime();
-
-    const timer = setInterval(() => {
-      const now = Date.now();
-      const diff = Math.max(0, end - now);
-
-      const m = Math.floor(diff / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-
-      setCountdown(`${m}:${s.toString().padStart(2, "0")}`);
-
-      if (diff <= 0) {
-        clearInterval(timer);
-        setMessage("認証期限が切れました。");
-
-        fetch("/api/deleteUnverified", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ adminId }),
+        if (hasCookie) {
+        const res = await fetch("/api/directLogin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
         });
-      }
-    }, 1000);
 
-    return () => clearInterval(timer);
-  }, [isWaiting, expiresAt]);
+        const data = await res.json();
+        setIsLoading(false);
 
-  // -----------------------------
-  // Realtime 監視 → 認証完了で自動ログイン
-  // -----------------------------
-  useEffect(() => {
-    if (!isWaiting || !adminId) return;
-
-    const channel = supabase
-      .channel("login-verification")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "admins",
-        },
-        async (payload) => {
-          if (payload.new.id === adminId && payload.new.is_verified === true) {
-            await fetch(`/api/verify?token=${payload.new.verification_token}`, {
-              method: "GET",
-              credentials: "include",
-            });
+        if (data.ok) {
             window.location.href = "/admin/dashboard";
-          }
+            return;
+        } else {
+            setMessage(data.error);
+            return;
         }
-      )
-      .subscribe();
+        }
 
-    return () => supabase.removeChannel(channel);
-  }, [isWaiting, adminId]);
+        const res = await fetch("/api/adminLoginOrRegister", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+        });
 
-  return (
-    <div style={{ maxWidth: 400, margin: "40px auto" }}>
-      <h2>管理者ログイン</h2>
+        const data = await res.json();
+        setIsLoading(false);
 
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="メールアドレス"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ width: "100%", margin: "8px 0", padding: "8px" }}
-        />
+        if (data.ok) {
+            setAdminId(data.adminId);
+            setExpiresAt(data.expiresAt);
+            setIsWaiting(true);
+            setMessage("メールの認証を待っています…");
+        } else {
+            setMessage(data.error);
+        }
+    }
 
-        <input
-          type="password"
-          placeholder="パスワード"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ width: "100%", margin: "8px 0", padding: "8px" }}
-        />
+    // -----------------------------
+    // ★ カウントダウン
+    // -----------------------------
+    useEffect(() => {
+        if (!isWaiting || !expiresAt) return;
 
-        <button
-          type="submit"
-          style={{
-            width: "100%",
-            padding: "10px",
-            opacity: isLoading ? 0.7 : 1,
-            cursor: isLoading ? "not-allowed" : "pointer",
-          }}
-          disabled={isLoading}
-        >
-          {isLoading ? <span className="dot-loader"></span> : "登録 / ログイン"}
-        </button>
-      </form>
+        const end = new Date(expiresAt).getTime();
 
-      {message && <p style={{ marginTop: 10 }}>{message}</p>}
+        // ★ 初回だけ即時に countdown を更新（←これが重要）
+        const updateCountdown = () => {
+            const now = Date.now();
+            const diff = Math.max(0, end - now);
 
-      {isWaiting && (
-        <div
-          style={{
-            marginTop: "15px",
-            padding: "10px",
-            background: "#fff3cd",
-            border: "1px solid #ffeeba",
-            borderRadius: "6px",
-            color: "#856404",
-            fontWeight: "bold",
-            textAlign: "center",
-          }}
-        >
-          認証期限: {countdown}
+            const m = Math.floor(diff / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+
+            setCountdown(`${m}:${s.toString().padStart(2, "0")}`);
+
+            return diff;
+        };
+
+        // ★ まず即時実行
+        const firstDiff = updateCountdown();
+
+        // 期限切れなら即終了
+        if (firstDiff <= 0) {
+            setMessage("認証期限が切れました。");
+            fetch("/api/deleteUnverified", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ adminId }),
+            });
+            return;
+        }
+
+        // ★ 1 秒ごとに更新
+        const timer = setInterval(() => {
+            const diff = updateCountdown();
+
+            if (diff <= 0) {
+            clearInterval(timer);
+            setMessage("認証期限が切れました。");
+
+            fetch("/api/deleteUnverified", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ adminId }),
+            });
+            }
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [isWaiting, expiresAt]);
+
+
+    // -----------------------------
+    // Realtime 監視 → 認証完了で自動ログイン
+    // -----------------------------
+    useEffect(() => {
+        if (!isWaiting || !adminId) return;
+
+        const channel = supabase
+        .channel("login-verification")
+        .on(
+            "postgres_changes",
+            {
+                event: "UPDATE",
+                schema: "public",
+                table: "admins",
+            },
+            async (payload) => {
+            if (payload.new.id === adminId && payload.new.is_verified === true) {
+                await fetch(`/api/verify?token=${payload.new.verification_token}`, {
+                    method: "GET",
+                    credentials: "include",
+                });
+                window.location.href = "/admin/dashboard";
+            }
+            }
+        )
+        .subscribe();
+
+        return () => supabase.removeChannel(channel);
+    }, [isWaiting, adminId]);
+
+    return (
+        <div style={{ maxWidth: 400, margin: "40px auto" }}>
+        <h2>管理者ログイン</h2>
+
+        <form onSubmit={handleLogin}>
+            <input
+                type="email"
+                placeholder="メールアドレス"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={{ width: "100%", margin: "8px 0", padding: "8px" }}
+            />
+
+            <input
+                type="password"
+                placeholder="パスワード"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{ width: "100%", margin: "8px 0", padding: "8px" }}
+            />
+
+            <button
+            type="submit"
+            style={{
+                width: "100%",
+                padding: "10px",
+                opacity: isLoading ? 0.7 : 1,
+                cursor: isLoading ? "not-allowed" : "pointer",
+            }}
+            disabled={isLoading}
+            >
+            {isLoading ? <span className="dot-loader"></span> : "登録 / ログイン"}
+            </button>
+        </form>
+
+        {message && <p style={{ marginTop: 10 }}>{message}</p>}
+
+        {isWaiting && (
+            <div
+            style={{
+                marginTop: "15px",
+                padding: "10px",
+                background: "#fff3cd",
+                border: "1px solid #ffeeba",
+                borderRadius: "6px",
+                color: "#856404",
+                fontWeight: "bold",
+                textAlign: "center",
+            }}
+            >
+            認証期限: {countdown}
+            </div>
+        )}
         </div>
-      )}
-    </div>
-  );
+    );
 }
 
 // -----------------------------
