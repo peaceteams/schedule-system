@@ -2,16 +2,17 @@ import jwt from "jsonwebtoken";
 
 export default function Dashboard({ admin }) {
   return (
-    <div style={{ padding: 40 }}>
-      <h1>管理者ダッシュボード</h1>
-      <pre>{JSON.stringify(admin, null, 2)}</pre>
+    <div>
+      <h1>Dashboard</h1>
+      <p>ログイン中: {admin.adminId}</p>
     </div>
   );
 }
 
 export async function getServerSideProps({ req }) {
-  const token = req.cookies.admin_session || null;
+  const token = req.cookies.admin_session;
 
+  // Cookie が無い → ログインしていない
   if (!token) {
     return {
       redirect: {
@@ -22,9 +23,15 @@ export async function getServerSideProps({ req }) {
   }
 
   try {
+    // JWT を検証
     const admin = jwt.verify(token, process.env.JWT_SECRET);
-    return { props: { admin } };
+
+    // OK → ページに admin 情報を渡す
+    return {
+      props: { admin },
+    };
   } catch (err) {
+    // 壊れた JWT / 期限切れ → ログインへ
     return {
       redirect: {
         destination: "/admin/login",
