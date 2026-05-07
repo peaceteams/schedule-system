@@ -11,26 +11,62 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [adminId, setAdminId] = useState(null);
+  const [isRegistered, setIsRegistered] = useState(null); // ← 登録済みかどうか
   const [isWaiting, setIsWaiting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // -----------------------------
-  // 1. Cookie が残っていたら即ダッシュボードへ
+  // ① メール入力時にリアルタイムで登録済みチェック
   // -----------------------------
   useEffect(() => {
-    if (document.cookie.includes("admin_session")) {
-      window.location.href = "/admin/dashboard";
+    if (!email) {
+      setIsRegistered(null);
+      return;
     }
-  }, []);
+
+    const timer = setTimeout(async () => {
+      const res = await fetch("/api/checkAdmin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+      setIsRegistered(data.exists);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [email]);
 
   // -----------------------------
-  // 2. ログイン処理（Cookie が無い場合のみ実行）
+  // ② ログインボタン押下時の処理
   // -----------------------------
   async function handleLogin(e) {
     e.preventDefault();
     setIsLoading(true);
 
-    const res = await fetch("/api/adminLogin", {
+    // Cookie が存在する場合 → パスワードチェックだけで即ログイン
+    if (document.cookie.includes("admin_session")) {
+      const res = await fetch("/api/directLogin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      setIsLoading(false);
+
+      if (data.ok) {
+        window.location.href = "/admin/dashboard";
+        return;
+      } else {
+        setMessage(data.error);
+        return;
+      }
+    }
+
+    // Cookie がない場合 → メール認証フロー
+    const res = await fetch("/api/adminLoginOrRegister", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -49,7 +85,7 @@ export default function AdminLogin() {
   }
 
   // -----------------------------
-  // 3. Realtime 監視（adminId 限定）
+  // ③ Realtime 監視（自動遷移はしない）
   // -----------------------------
   useEffect(() => {
     if (!isWaiting || !adminId) return;
@@ -65,12 +101,7 @@ export default function AdminLogin() {
         },
         async (payload) => {
           if (payload.new.id === adminId && payload.new.is_verified === true) {
-            await fetch(`/api/verify?token=${payload.new.verification_token}`, {
-              method: "GET",
-              credentials: "include",
-            });
-
-            window.location.href = "/admin/dashboard";
+            setMessage("認証が完了しました。ログインボタンを押してください。");
           }
         }
       )
@@ -81,7 +112,7 @@ export default function AdminLogin() {
 
   return (
     <div style={{ maxWidth: 400, margin: "40px auto" }}>
-      <h2>管理者ログイン</h2>
+      <h2>管理者ログイン / 登録</h2>
 
       <form onSubmit={handleLogin}>
         <input
@@ -112,35 +143,19 @@ export default function AdminLogin() {
           }}
           disabled={isLoading}
         >
-          {isLoading ? <span className="dot-loader"></span> : "ログイン"}
+          {isLoading ? (
+            <span className="dot-loader"></span>
+          ) : isRegistered === null ? (
+            "ログイン / 登録"
+          ) : isRegistered ? (
+            "ログイン"
+          ) : (
+            "登録"
+          )}
         </button>
       </form>
 
       {message && <p style={{ marginTop: 10 }}>{message}</p>}
     </div>
   );
-}
-
-// -----------------------------
-// 4. SSR 認証（ログイン済みなら login を開けない）
-// -----------------------------
-export async function getServerSideProps({ req }) {
-  const token = req.cookies.admin_session;
-
-  if (token) {
-    const jwt = require("jsonwebtoken");
-    try {
-      jwt.verify(token, process.env.JWT_SECRET);
-      return {
-        redirect: {
-          destination: "/admin/dashboard",
-          permanent: false,
-        },
-      };
-    } catch (e) {
-      // 壊れた JWT → 無視してログイン画面を表示
-    }
-  }
-
-  return { props: {} };
 }
