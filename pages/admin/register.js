@@ -94,7 +94,7 @@ export default function AdminRegister() {
           table: "admins",
         },
         async (payload) => {
-          if (payload.new.is_verified === true) {
+          if (payload.new.id === adminId && payload.new.is_verified === true) {
             console.log("🎉 認証成功 → verify API を叩きます");
 
             await fetch(`/api/verify?token=${payload.new.verification_token}`, {
