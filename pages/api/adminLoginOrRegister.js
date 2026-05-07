@@ -22,11 +22,11 @@ export default async function handler(req, res) {
     const { data: newAdmin, error } = await supabase
         .from("admins")
         .insert({
-        email,
-        password_hash: password,
-        is_verified: false,
-        verification_token: token,
-        verification_expires: expires,
+            email,
+            password_hash: password,
+            is_verified: false,
+            verification_token: token,
+            verification_expires: expires,
         })
         .select()
         .single();
@@ -75,6 +75,8 @@ export default async function handler(req, res) {
         verification_expires: expires,
     })
     .eq("id", existing.id);
+
+    const verifyUrl = `${process.env.BASE_URL}/api/verify-email?token=${token}`;
 
     await sendMail({
         to: email,
