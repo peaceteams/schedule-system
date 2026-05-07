@@ -42,19 +42,19 @@ export default function AdminLogin({ hasCookie }) {
 
     // ブラウザのオートフィルを検知する
     useEffect(() => {
-    const timer = setTimeout(() => {
+    const interval = setInterval(() => {
         const emailInput = document.querySelector("input[type='email']");
         const passwordInput = document.querySelector("input[type='password']");
 
         if (emailInput && emailInput.value !== email) {
-            setEmail(emailInput.value);
+        setEmail(emailInput.value);
         }
         if (passwordInput && passwordInput.value !== password) {
-            setPassword(passwordInput.value);
+        setPassword(passwordInput.value);
         }
     }, 200);
 
-    return () => clearTimeout(timer);
+    setTimeout(() => clearInterval(interval), 1500);
     }, []);
 
     // -----------------------------
