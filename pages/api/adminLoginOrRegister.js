@@ -1,203 +1,116 @@
-"use client";
+import supabase from "@/lib/db";
+import { sendMail } from "@/lib/sendMail";
+import crypto from "crypto";
 
-import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
+export default async function handler(req, res) {
+  const { email, password } = req.body;
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+  // 既存ユーザーか確認
+  const { data: existing } = await supabase
+    .from("admins")
+    .select("*")
+    .eq("email", email)
+    .single();
 
-export default function AdminLogin({ hasCookie }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const [adminId, setAdminId] = useState(null);
-  const [isWaiting, setIsWaiting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // ★ カウントダウン用
-  const [expiresAt, setExpiresAt] = useState(null);
-  const [countdown, setCountdown] = useState("");
+  const token = crypto.randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
   // -----------------------------
-  // ログインボタン押下
+  // ① 未登録 → 新規登録フロー
   // -----------------------------
-  async function handleLogin(e) {
-    e.preventDefault();
-    setIsLoading(true);
+  if (!existing) {
+    const { data: newAdmin, error } = await supabase
+      .from("admins")
+      .insert({
+        email,
+        password_hash: password,
+        is_verified: false,
+        verification_token: token,
+        verification_expires: expires,
+      })
+      .select()
+      .single();
 
-    // Cookie がある → directLogin
-    if (hasCookie) {
-      const res = await fetch("/api/directLogin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-      setIsLoading(false);
-
-      if (data.ok) {
-        window.location.href = "/admin/dashboard";
-        return;
-      } else {
-        setMessage(data.error);
-        return;
-      }
+    if (error) {
+      return res.status(400).json({ ok: false, error: "登録に失敗しました" });
     }
 
-    // Cookie がない → メール認証フロー
-    const res = await fetch("/api/adminLoginOrRegister", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+    const verifyUrl = `${process.env.BASE_URL}/api/verify-email?token=${token}`;
+
+    await sendMail({
+      to: email,
+      subject: "管理者登録の確認",
+      html: `
+        <p>以下のボタンをクリックしてメールアドレスを確認してください。</p>
+        <a href="${verifyUrl}"
+          style="
+            display: inline-block;
+            padding: 12px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+          ">
+          メールアドレスを確認する
+        </a>
+        <p>このリンクは5分間有効です。</p>
+      `
     });
 
-    const data = await res.json();
-    setIsLoading(false);
-
-    if (data.ok) {
-      setAdminId(data.adminId);
-      setExpiresAt(data.expiresAt);   // ★ ここが重要
-      setIsWaiting(true);
-      setMessage("メールの認証を待っています…");
-    } else {
-      setMessage(data.error);
-    }
+    // ★ カウントダウン用 expiresAt を返す
+    return res.status(200).json({
+      ok: true,
+      adminId: newAdmin.id,
+      expiresAt: expires
+    });
   }
 
   // -----------------------------
-  // ★ カウントダウン
+  // ② 登録済み → ログインフロー
   // -----------------------------
-  useEffect(() => {
-    if (!isWaiting || !expiresAt) return;
+  if (existing.password_hash !== password) {
+    return res.status(400).json({ ok: false, error: "パスワードが違います" });
+  }
 
-    const end = new Date(expiresAt).getTime();
+  // ログイン用の新しいトークンを発行
+  await supabase
+    .from("admins")
+    .update({
+      verification_token: token,
+      verification_expires: expires,
+    })
+    .eq("id", existing.id);
 
-    const timer = setInterval(() => {
-      const now = Date.now();
-      const diff = Math.max(0, end - now);
+  const verifyUrl = `${process.env.BASE_URL}/api/verify-email?token=${token}`;
 
-      const m = Math.floor(diff / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
+  await sendMail({
+    to: email,
+    subject: "ログイン認証",
+    html: `
+      <p>以下のボタンをクリックしてメールアドレスを確認してください。</p>
+      <a href="${verifyUrl}"
+        style="
+          display: inline-block;
+          padding: 12px 20px;
+          background-color: #4CAF50;
+          color: white;
+          text-decoration: none;
+          border-radius: 6px;
+          font-size: 16px;
+          font-weight: bold;
+        ">
+        メールアドレスを確認する
+      </a>
+      <p>このリンクは5分間有効です。</p>
+    `
+  });
 
-      setCountdown(`${m}:${s.toString().padStart(2, "0")}`);
-
-      if (diff <= 0) {
-        clearInterval(timer);
-        setMessage("認証期限が切れました。アカウントを削除します…");
-
-        fetch("/api/deleteUnverified", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ adminId }),
-        });
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isWaiting, expiresAt]);
-
-  // -----------------------------
-  // Realtime 監視 → 認証完了で自動ログイン
-  // -----------------------------
-  useEffect(() => {
-    if (!isWaiting || !adminId) return;
-
-    const channel = supabase
-      .channel("login-verification")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "admins",
-        },
-        async (payload) => {
-          if (payload.new.id === adminId && payload.new.is_verified === true) {
-            await fetch(`/api/verify-email?token=${payload.new.verification_token}`, {
-              method: "GET",
-              credentials: "include",
-            });
-
-            window.location.href = "/admin/dashboard";
-          }
-        }
-      )
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
-  }, [isWaiting, adminId]);
-
-  return (
-    <div style={{ maxWidth: 400, margin: "40px auto" }}>
-      <h2>管理者ログイン</h2>
-
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="メールアドレス"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ width: "100%", margin: "8px 0", padding: "8px" }}
-        />
-
-        <input
-          type="password"
-          placeholder="パスワード"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ width: "100%", margin: "8px 0", padding: "8px" }}
-        />
-
-        <button
-          type="submit"
-          style={{
-            width: "100%",
-            padding: "10px",
-            opacity: isLoading ? 0.7 : 1,
-            cursor: isLoading ? "not-allowed" : "pointer",
-          }}
-          disabled={isLoading}
-        >
-          {isLoading ? <span className="dot-loader"></span> : "登録 / ログイン"}
-        </button>
-      </form>
-
-      {message && <p style={{ marginTop: 10 }}>{message}</p>}
-
-      {isWaiting && (
-        <div
-          style={{
-            marginTop: "15px",
-            padding: "10px",
-            background: "#fff3cd",
-            border: "1px solid #ffeeba",
-            borderRadius: "6px",
-            color: "#856404",
-            fontWeight: "bold",
-            textAlign: "center",
-          }}
-        >
-          認証期限: {countdown}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// -----------------------------
-// SSR で Cookie を判定して props に渡す
-// -----------------------------
-export async function getServerSideProps({ req }) {
-  const token = req.cookies.admin_session || null;
-
-  return {
-    props: {
-      hasCookie: !!token,
-    },
-  };
+  // ★ カウントダウン用 expiresAt を返す
+  return res.status(200).json({
+    ok: true,
+    adminId: existing.id,
+    expiresAt: expires
+  });
 }
