@@ -96,7 +96,7 @@ export default function AdminLogin({ hasCookie }) {
 
     return (
     <div style={{ maxWidth: 400, margin: "40px auto" }}>
-        <h2>管理者ログイン / 登録</h2>
+        <h2>管理者ログイン</h2>
 
         <form onSubmit={handleLogin}>
         <input

@@ -9,7 +9,7 @@ export default function Dashboard({ admin }) {
   );
 }
 
-export async function getServerSideProps({ req }) {
+export async function getServerSideProps({ req, res }) {
   const token = req.cookies.admin_session;
 
   // Cookie が無い → ログインしていない
@@ -31,7 +31,12 @@ export async function getServerSideProps({ req }) {
       props: { admin },
     };
   } catch (err) {
-    // 壊れた JWT / 期限切れ → ログインへ
+    // 壊れた JWT / 期限切れ → Cookie を削除してログインへ
+    res.setHeader(
+      "Set-Cookie",
+      "admin_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict; Secure"
+    );
+
     return {
       redirect: {
         destination: "/admin/login",
