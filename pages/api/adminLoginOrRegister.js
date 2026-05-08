@@ -140,6 +140,5 @@ export default async function handler(req, res) {
     adminId: existing.id,
     expiresAt: expires,
     expiresInSeconds: expiresIn,
-    isNewUser: false
   });
 }

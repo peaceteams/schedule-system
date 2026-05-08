@@ -17,7 +17,10 @@ export default async function handler(req, res) {
   // is_verified を true にする
   await supabase
     .from("admins")
-    .update({ is_verified: true })
+    .update({ 
+      is_verified: true,
+      verification_token: admin.verification_token
+    })
     .eq("id", admin.id);
 
   // Cookie はセットしない
