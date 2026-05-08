@@ -85,9 +85,6 @@ export default function AdminLogin({ hasCookie }) {
 
         const end = new Date(expiresAt).getTime();
 
-        // ★ 初期表示は expiresAt を使わず、DEBUG_EXPIRES をそのまま表示
-        setCountdown(`0:${DEBUG_EXPIRES.toString().padStart(2, "0")}`);
-
         const update = () => {
             const now = Date.now();
             const diff = Math.max(0, end - now);
@@ -100,34 +97,30 @@ export default function AdminLogin({ hasCookie }) {
             return diff;
         };
 
-        // ★ update は 1 秒後から開始（初回を特別扱いしない）
-        const starter = setTimeout(() => {
-            const timer = setInterval(() => {
-                const diff = update();
+        // ★ 初回即時実行（5:00 → 4:59）
+        update();
 
-                if (diff <= 0) {
-                    clearInterval(timer);
+        const timer = setInterval(() => {
+            const diff = update();
 
-                    if (isNewUser) {
-                        setMessage("認証期限が切れました。アカウントを削除します…");
-                        fetch("/api/deleteAdmin", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ adminId }),
-                        });
-                    } else {
-                        setMessage("認証期限が切れました。再度ログインしてください。");
-                        setTimeout(() => window.location.reload(), 1500);
-                    }
+            if (diff <= 0) {
+                clearInterval(timer);
+
+                if (isNewUser) {
+                    setMessage("認証期限が切れました。再度登録してください。");
+                    fetch("/api/deleteUnverified", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ adminId }),
+                    });
+                } else {
+                    setMessage("認証期限が切れました。再度ログインしてください。");
+                    setTimeout(() => window.location.reload(), 1500);
                 }
-            }, 1000);
-
-            // cleanup interval
-            return () => clearInterval(timer);
+            }
         }, 1000);
 
-        // cleanup timeout
-        return () => clearTimeout(starter);
+        return () => clearInterval(timer);
     }, [isWaiting, expiresAt]);
 
         // -----------------------------
