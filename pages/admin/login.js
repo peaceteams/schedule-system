@@ -22,7 +22,7 @@ export default function AdminLogin({ hasCookie }) {
     const [isNewUser, setIsNewUser] = useState(null);
 
     // ★ デバッグ用（自由に変更）
-    const DEBUG_EXPIRES = 10; // 10秒、5秒、300秒など自由
+    const DEBUG_EXPIRES = 300; // 10秒、5秒、300秒など自由
 
     // -----------------------------
     // ログインボタン押下
