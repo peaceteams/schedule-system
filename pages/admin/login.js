@@ -65,7 +65,6 @@ export default function AdminLogin({ hasCookie }) {
 
         if (data.ok) {
             setAdminId(data.adminId);
-            setExpiresAt(data.expiresAt);
 
             // ★ サーバーの expiresAt は使わず、フロントで再計算
             const clientExpiresAt = new Date(Date.now() + data.expiresInSeconds * 1000).toISOString();
@@ -82,54 +81,54 @@ export default function AdminLogin({ hasCookie }) {
     // ★ カウントダウン
     // -----------------------------
     useEffect(() => {
-    if (!isWaiting || !expiresAt) return;
+        if (!isWaiting || !expiresAt) return;
 
-    const end = new Date(expiresAt).getTime();
+        const end = new Date(expiresAt).getTime();
 
-    const update = () => {
-        const now = Date.now();
-        const diff = Math.max(0, end - now);
+        const update = () => {
+            const now = Date.now();
+            const diff = Math.max(0, end - now);
 
-        const m = Math.floor(diff / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
+            const m = Math.floor(diff / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
 
-        setCountdown(`${m}:${s.toString().padStart(2, "0")}`);
+            setCountdown(`${m}:${s.toString().padStart(2, "0")}`);
 
-        return diff;
-    };
+            return diff;
+        };
 
-    // ★ 初回は 1 秒後に update を実行
-    const first = setTimeout(() => {
-        const diff = update();
+        // ★ 初回は 1 秒後に update を実行
+        const first = setTimeout(() => {
+            const diff = update();
 
-        if (diff <= 0) return;
+            if (diff <= 0) return;
 
-        // ★ その後は 1 秒ごとに update
-        const timer = setInterval(() => {
-        const diff = update();
+            // ★ その後は 1 秒ごとに update
+            const timer = setInterval(() => {
+            const diff = update();
 
-        if (diff <= 0) {
-            clearInterval(timer);
+            if (diff <= 0) {
+                clearInterval(timer);
 
-            if (isNewUser) {
-            setMessage("認証期限が切れました。アカウントを削除します…");
-            fetch("/api/deleteAdmin", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ adminId }),
-            });
-            } else {
-            setMessage("認証期限が切れました。再度ログインしてください。");
-            setTimeout(() => window.location.reload(), 1500);
+                if (isNewUser) {
+                setMessage("認証期限が切れました。アカウントを削除します…");
+                fetch("/api/deleteAdmin", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ adminId }),
+                });
+                } else {
+                setMessage("認証期限が切れました。再度ログインしてください。");
+                setTimeout(() => window.location.reload(), 1500);
+                }
             }
-        }
+            }, 1000);
+
+            // cleanup
+            return () => clearInterval(timer);
         }, 1000);
 
-        // cleanup
-        return () => clearInterval(timer);
-    }, 1000);
-
-    return () => clearTimeout(first);
+        return () => clearTimeout(first);
     }, [isWaiting, expiresAt]);
 
     // -----------------------------
