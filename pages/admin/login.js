@@ -67,7 +67,7 @@ export default function AdminLogin({ hasCookie }) {
             setAdminId(data.adminId);
 
             // ★ サーバーの expiresAt は使わず、フロントで再計算
-            const clientExpiresAt = new Date(Date.now() + data.expiresInSeconds * 1000).toISOString();
+            const clientExpiresAt = new Date(Date.now() + (DEBUG_EXPIRES + 1) * 1000).toISOString();
             setExpiresAt(clientExpiresAt);
 
             setIsWaiting(true);
@@ -85,6 +85,9 @@ export default function AdminLogin({ hasCookie }) {
 
         const end = new Date(expiresAt).getTime();
 
+        // ★ 初期表示は expiresAt を使わず、DEBUG_EXPIRES をそのまま表示
+        setCountdown(`0:${DEBUG_EXPIRES.toString().padStart(2, "0")}`);
+
         const update = () => {
             const now = Date.now();
             const diff = Math.max(0, end - now);
@@ -97,13 +100,7 @@ export default function AdminLogin({ hasCookie }) {
             return diff;
         };
 
-        // ★ 初期表示だけ先に行う（ここは update を使わない）
-        const initialDiff = end - Date.now();
-        const initialM = Math.floor(initialDiff / 60000);
-        const initialS = Math.floor((initialDiff % 60000) / 1000);
-        setCountdown(`${initialM}:${initialS.toString().padStart(2, "0")}`);
-
-        // ★ 1秒後に update を開始（初回 update を特別扱いしない）
+        // ★ update は 1 秒後から開始（初回を特別扱いしない）
         const starter = setTimeout(() => {
             const timer = setInterval(() => {
                 const diff = update();
@@ -112,25 +109,25 @@ export default function AdminLogin({ hasCookie }) {
                     clearInterval(timer);
 
                     if (isNewUser) {
-                    setMessage("認証期限が切れました。再度登録してください。");
-                    fetch("/api/deleteAdmin", {
+                        setMessage("認証期限が切れました。アカウントを削除します…");
+                        fetch("/api/deleteAdmin", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ adminId }),
-                    });
+                        });
                     } else {
-                    setMessage("認証期限が切れました。再度ログインしてください。");
-                    setTimeout(() => window.location.reload(), 1500);
+                        setMessage("認証期限が切れました。再度ログインしてください。");
+                        setTimeout(() => window.location.reload(), 1500);
                     }
                 }
             }, 1000);
 
-            // cleanup for interval
+            // cleanup interval
             return () => clearInterval(timer);
         }, 1000);
 
-            // cleanup for starter
-            return () => clearTimeout(starter);
+        // cleanup timeout
+        return () => clearTimeout(starter);
     }, [isWaiting, expiresAt]);
 
         // -----------------------------
