@@ -1,5 +1,3 @@
-export const runtime = "nodejs";
-
 import supabase from "@/lib/db";
 import { sendMail } from "@/lib/sendMail";
 import crypto from "crypto";
@@ -33,7 +31,7 @@ export default async function handler(req, res) {
         isNewUser: true,
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       return res.status(400).json({ ok: false, error: "登録に失敗しました" });
