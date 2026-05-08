@@ -27,34 +27,30 @@ export default async function handler(req, res) {
     })
     .eq("id", admin.id);
 
-  // 3. ★ session_id を発行（UUID）
+  // 3. session_id を発行
   const sessionId = crypto.randomUUID();
 
-  // 4. ★ admin_sessions に保存（端末ごとのログイン管理）
-  const { error: sessionError } = await supabase
-    .from("admin_sessions")
-    .insert({
-      id: sessionId,
-      admin_id: admin.id,
-      user_agent: req.headers["user-agent"] || "",
-      ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress || "",
-    });
+  // 4. admin_sessions に保存
+  await supabase.from("admin_sessions").insert({
+    id: sessionId,
+    admin_id: admin.id,
+    user_agent: req.headers["user-agent"] || "",
+    ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress || "",
+  });
 
-  console.log("admin_sessions insert error:", sessionError);
-
-  // 5. ★ JWT を発行（payload に sessionId を入れる）
+  // 5. JWT を発行（sessionId を入れる）
   const jwtToken = jwt.sign(
-    { sessionId },
+    { sessionId },  // ← これが重要
     process.env.JWT_SECRET,
     { expiresIn: "12h" }
   );
 
-  // 6. ★ Cookie に JWT を保存（署名付きで改ざん防止）
+  // 6. Cookie に保存
   res.setHeader(
     "Set-Cookie",
     serialize("admin_session", jwtToken, {
       httpOnly: true,
-      secure: true, // 本番は true
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 12,
