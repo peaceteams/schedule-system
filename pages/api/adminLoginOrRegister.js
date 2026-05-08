@@ -41,7 +41,6 @@ export default async function handler(req, res) {
         is_verified: false,
         verification_token: token,
         verification_expires: expires,
-        isNewUser: true,
       })
       .select()
       .maybeSingle();
