@@ -21,6 +21,9 @@ export default function AdminLogin({ hasCookie }) {
     const [countdown, setCountdown] = useState("");
     const [isNewUser, setIsNewUser] = useState(null);
 
+    // ★ デバッグ用（自由に変更）
+    const DEBUG_EXPIRES = 10; // 10秒、5秒、300秒など自由
+
     // -----------------------------
     // ログインボタン押下
     // -----------------------------
@@ -50,7 +53,11 @@ export default function AdminLogin({ hasCookie }) {
         const res = await fetch("/api/adminLoginOrRegister", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password, expiresInSeconds: 10 }),
+            body: JSON.stringify({
+                email,
+                password,
+                expiresInSeconds: DEBUG_EXPIRES
+            }),
         });
 
         const data = await res.json();
@@ -59,6 +66,10 @@ export default function AdminLogin({ hasCookie }) {
         if (data.ok) {
             setAdminId(data.adminId);
             setExpiresAt(data.expiresAt);
+
+            // ★ サーバーの expiresAt は使わず、フロントで再計算
+            const clientExpiresAt = new Date(Date.now() + data.expiresInSeconds * 1000).toISOString();
+            setExpiresAt(clientExpiresAt);
 
             setIsWaiting(true);
             setMessage("メールの認証を待っています…");

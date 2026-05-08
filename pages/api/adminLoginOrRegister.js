@@ -65,6 +65,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       adminId: newAdmin.id,
+      expiresInSeconds: expiresIn,
       expiresAt: expires
     });
   }
@@ -114,6 +115,7 @@ export default async function handler(req, res) {
     ok: true,
     adminId: existing.id,
     expiresAt: expires,
+    expiresInSeconds: expiresIn,
     isNewUser: false
   });
 }
