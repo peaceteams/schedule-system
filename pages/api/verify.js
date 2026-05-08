@@ -31,12 +31,14 @@ export default async function handler(req, res) {
   const sessionId = crypto.randomUUID();
 
   // 4. ★ admin_sessions に保存（端末ごとのログイン管理）
-  await supabase.from("admin_sessions").insert({
-    id: sessionId,
-    admin_id: admin.id,
-    user_agent: req.headers["user-agent"] || "",
-    ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress || "",
-  });
+  const { error: sessionError } = await supabase
+    .from("admin_sessions")
+    .insert({
+      id: sessionId,
+      admin_id: admin.id,
+      user_agent: req.headers["user-agent"] || "",
+      ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress || "",
+    });
 
   console.log("admin_sessions insert error:", sessionError);
 
