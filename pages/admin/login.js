@@ -67,7 +67,7 @@ export default function AdminLogin({ hasCookie }) {
             setAdminId(data.adminId);
 
             // ★ サーバーの expiresAt は使わず、フロントで再計算
-            const clientExpiresAt = new Date(Date.now() + (DEBUG_EXPIRES + 1) * 1000).toISOString();
+            const clientExpiresAt = new Date(Date.now() + (DEBUG_EXPIRES) * 1000).toISOString();
             setExpiresAt(clientExpiresAt);
 
             setIsWaiting(true);
