@@ -38,6 +38,8 @@ export default async function handler(req, res) {
     ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress || "",
   });
 
+  console.log("admin_sessions insert error:", sessionError);
+
   // 5. ★ JWT を発行（payload に sessionId を入れる）
   const jwtToken = jwt.sign(
     { sessionId },
