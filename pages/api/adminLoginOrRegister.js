@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import supabase from "@/lib/db";
 import { sendMail } from "@/lib/sendMail";
 import crypto from "crypto";
