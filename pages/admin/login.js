@@ -97,68 +97,70 @@ export default function AdminLogin({ hasCookie }) {
             return diff;
         };
 
-        // ★ 初回は 1 秒後に update を実行
-        const first = setTimeout(() => {
-            const diff = update();
+        // ★ 初期表示だけ先に行う（ここは update を使わない）
+        const initialDiff = end - Date.now();
+        const initialM = Math.floor(initialDiff / 60000);
+        const initialS = Math.floor((initialDiff % 60000) / 1000);
+        setCountdown(`${initialM}:${initialS.toString().padStart(2, "0")}`);
 
-            if (diff <= 0) return;
-
-            // ★ その後は 1 秒ごとに update
+        // ★ 1秒後に update を開始（初回 update を特別扱いしない）
+        const starter = setTimeout(() => {
             const timer = setInterval(() => {
-            const diff = update();
+                const diff = update();
 
-            if (diff <= 0) {
-                clearInterval(timer);
+                if (diff <= 0) {
+                    clearInterval(timer);
 
-                if (isNewUser) {
-                setMessage("認証期限が切れました。アカウントを削除します…");
-                fetch("/api/deleteAdmin", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ adminId }),
-                });
-                } else {
-                setMessage("認証期限が切れました。再度ログインしてください。");
-                setTimeout(() => window.location.reload(), 1500);
+                    if (isNewUser) {
+                    setMessage("認証期限が切れました。再度登録してください。");
+                    fetch("/api/deleteAdmin", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ adminId }),
+                    });
+                    } else {
+                    setMessage("認証期限が切れました。再度ログインしてください。");
+                    setTimeout(() => window.location.reload(), 1500);
+                    }
                 }
-            }
             }, 1000);
 
-            // cleanup
+            // cleanup for interval
             return () => clearInterval(timer);
         }, 1000);
 
-        return () => clearTimeout(first);
+            // cleanup for starter
+            return () => clearTimeout(starter);
     }, [isWaiting, expiresAt]);
 
-    // -----------------------------
-    // Realtime 監視 → 認証完了で自動ログイン
-    // -----------------------------
-    useEffect(() => {
-        if (!isWaiting || !adminId) return;
+        // -----------------------------
+        // Realtime 監視 → 認証完了で自動ログイン
+        // -----------------------------
+        useEffect(() => {
+            if (!isWaiting || !adminId) return;
 
-        const channel = supabase
-        .channel("login-verification")
-        .on(
-            "postgres_changes",
-            {
-                event: "UPDATE",
-                schema: "public",
-                table: "admins",
-            },
-            async (payload) => {
-            if (payload.new.id === adminId && payload.new.is_verified === true) {
-                await fetch(`/api/verify?token=${payload.new.verification_token}`, {
-                    method: "GET",
-                    credentials: "include",
-                });
-                window.location.href = "/admin/dashboard";
-            }
-            }
-        )
-        .subscribe();
+            const channel = supabase
+            .channel("login-verification")
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "admins",
+                },
+                async (payload) => {
+                if (payload.new.id === adminId && payload.new.is_verified === true) {
+                    await fetch(`/api/verify?token=${payload.new.verification_token}`, {
+                        method: "GET",
+                        credentials: "include",
+                    });
+                    window.location.href = "/admin/dashboard";
+                }
+                }
+            )
+            .subscribe();
 
-        return () => supabase.removeChannel(channel);
+            return () => supabase.removeChannel(channel);
     }, [isWaiting, adminId]);
 
     return (
