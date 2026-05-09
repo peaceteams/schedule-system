@@ -1,6 +1,8 @@
 import supabase from "@/lib/db";
 import jwt from "jsonwebtoken";
 import { getOrCreateSession } from "@/lib/session";
+import { sendLoginNotification } from "@/lib/loginNotification";
+import { checkMustResetPassword } from "@/lib/auth";
 
 export default async function handler(req, res) {
   const { email, password } = req.body;
@@ -19,8 +21,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, error: "パスワードが違います" });
   }
 
+  const check = checkMustResetPassword(admin);
+  if (!check.ok) {
+    return res.status(403).json(check);
+  }
+
   // ★ 共通ロジックで sessionId を取得
   const sessionId = await getOrCreateSession(admin.id, req);
+  await sendLoginNotification(admin.email, sessionId);
 
   // JWT を発行
   const token = jwt.sign(

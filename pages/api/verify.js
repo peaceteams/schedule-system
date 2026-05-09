@@ -2,6 +2,8 @@ import { serialize } from "cookie";
 import supabase from "@/lib/db";
 import jwt from "jsonwebtoken";
 import { getOrCreateSession } from "@/lib/session";
+import { sendLoginNotification } from "@/lib/loginNotification";
+import { checkMustResetPassword } from "@/lib/auth";
 
 export default async function handler(req, res) {
   const token = req.query.token;
@@ -29,6 +31,11 @@ export default async function handler(req, res) {
 
   // ★ 共通ロジックで sessionId を取得
   const sessionId = await getOrCreateSession(admin.id, req);
+  const check = checkMustResetPassword(admin);
+  if (!check.ok) {
+    return res.status(403).json(check);
+  }
+  await sendLoginNotification(admin.email, sessionId);
 
   // JWT を発行
   const jwtToken = jwt.sign(
