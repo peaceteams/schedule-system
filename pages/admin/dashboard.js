@@ -9,6 +9,8 @@ const supabase = createClient(
 
 export default function Dashboard({ adminId, sessionId }) {
   useEffect(() => {
+    console.log("[Dashboard] sessionId from props:", sessionId);
+
     const channel = supabase
       .channel("session-watch")
       .on(
@@ -19,14 +21,23 @@ export default function Dashboard({ adminId, sessionId }) {
           table: "admin_sessions",
         },
         (payload) => {
+          console.log("[Realtime] DELETE payload:", payload);
+          console.log("[Realtime] payload.old.id:", payload?.old?.id);
+          console.log("[Realtime] comparing with sessionId:", sessionId);
+
           if (payload.old.id === sessionId) {
+            console.log("[Realtime] MATCH → force logout");
             window.location.href = "/admin/login";
+          } else {
+            console.log("[Realtime] NOT MATCH → ignore");
           }
         }
       )
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [sessionId]);
 
   return (
