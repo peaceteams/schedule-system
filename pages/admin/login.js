@@ -42,13 +42,13 @@ export default function AdminLogin({ hasCookie }) {
     // ★ 追加：パスワードをハッシュ化
     const hashed = await hashPassword(password);
 
-    const check = checkMustResetPassword(admin);
-    if (!check.ok) {
-      return res.status(403).json({
-        ok: false,
-        message: "アカウントがロックされました。メールからパスワードリセットを行ってください。"
-      });
-    }
+    const { data: admin } = await supabase
+      .from("admins")
+      .select("*")
+      .eq("verification_token", token)
+      .single();
+
+    checkMustResetPassword(admin);
 
     if (hasCookie) {
       const res = await fetch("/api/directLogin", {

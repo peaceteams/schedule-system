@@ -20,13 +20,7 @@ export default async function handler(req, res) {
   }
 
   // 2. must_reset_password チェック（先にやる）
-  const check = checkMustResetPassword(admin);
-  if (!check.ok) {
-    return res.status(403).json({
-        ok: false,
-        message: "アカウントがロックされました。メールからパスワードリセットを行ってください。"
-    });
-  }
+  checkMustResetPassword(admin);
 
   // 3. セッション作成
   const sessionId = await getOrCreateSession(admin.id, req);
