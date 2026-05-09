@@ -1,6 +1,8 @@
 import supabase from "@/lib/db";
 import { sendMail } from "@/lib/sendMail";
 import crypto from "crypto";
+import { checkMustResetPassword } from "@/lib/auth";
+
 
 export default async function handler(req, res) {
   console.log("=== adminLoginOrRegister START ===");
