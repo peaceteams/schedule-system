@@ -1,51 +1,64 @@
-// /api/invalidate-session?session=xxxx
-import { createClient } from "@supabase/supabase-js";
-import { forcePasswordReset } from "@/lib/resetPassword";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import supabase from "@/lib/db";
+import jwt from "jsonwebtoken";
 
 export default async function handler(req, res) {
-  const sessionId = req.query.session;
+  try {
+    const token = req.cookies.admin_session;
 
-  if (!sessionId) return res.status(400).send("Missing session");
+    if (!token) {
+      return res.status(401).json({ ok: false, error: "NO_SESSION" });
+    }
 
-  console.log("sessionId:", sessionId);
+    // JWT を decode
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const sessionId = payload.sessionId;
 
-  const { data: check } = await supabase
-    .from("admin_sessions")
-    .select("*")
-    .eq("id", sessionId);
+    console.log("sessionId:", sessionId);
 
-  console.log("DB check:", check);
+    // 1. セッションが存在するか確認
+    const { data: sessionCheck, error: checkError } = await supabase
+      .from("admin_sessions")
+      .select("*")
+      .eq("id", sessionId)
+      .single();
 
-  // 2. 削除フラグを立てる（Realtime が確実に拾える）
-  const { data: updateResult, error: updateError } = await supabase
-    .from("admin_sessions")
-    .update({ is_deleted: true })
-    .eq("id", sessionId);
+    console.log("DB check:", sessionCheck);
 
-  console.log("[API] UPDATE error:", updateError);
-  console.log("[API] UPDATE raw result:", updateResult);
+    if (!sessionCheck) {
+      console.log("SESSION_NOT_FOUND");
+      return res.status(401).json({ ok: false, error: "SESSION_NOT_FOUND" });
+    }
 
-  // 直後に DB を再確認
-  const { data: afterUpdate, error: afterError } = await supabase
-    .from("admin_sessions")
-    .select("id, is_deleted")
-    .eq("id", sessionId);
+    // ★ adminId をここで定義（ReferenceError 修正）
+    const adminId = sessionCheck.admin_id;
 
-  console.log("[API] AFTER UPDATE:", afterUpdate, afterError);
+    // 2. is_deleted を true に更新
+    const { data: updateResult, error: updateError } = await supabase
+      .from("admin_sessions")
+      .update({ is_deleted: true })
+      .eq("id", sessionId);
 
-  // DELETE
-  await supabase
-    .from("admin_sessions")
-    .delete()
-    .eq("id", sessionId);
+    console.log("[API] UPDATE error:", updateError);
+    console.log("[API] UPDATE raw result:", updateResult);
 
-  // パスワードリセット
-  await forcePasswordReset(adminId, email);
+    // 3. 更新後の状態を確認（デバッグ用）
+    const { data: afterUpdate, error: afterError } = await supabase
+      .from("admin_sessions")
+      .select("id, is_deleted")
+      .eq("id", sessionId);
 
-  return res.status(200).send("Session invalidated and password reset email sent");
+    console.log("[API] AFTER UPDATE:", afterUpdate, afterError);
+
+    // 4. Cookie を削除
+    res.setHeader(
+      "Set-Cookie",
+      `admin_session=; HttpOnly; Path=/; Max-Age=0; Secure; SameSite=Lax`
+    );
+
+    return res.status(200).json({ ok: true });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+  }
 }
