@@ -2,6 +2,7 @@ import { serialize } from "cookie";
 import supabase from "@/lib/db";
 import jwt from "jsonwebtoken";
 import { getOrCreateSession } from "@/lib/session";
+import { sendLoginNotification } from "@/lib/loginNotification";
 import { checkMustResetPassword } from "@/lib/auth";
 
 export default async function handler(req, res) {
@@ -56,7 +57,10 @@ export default async function handler(req, res) {
     })
   );
 
-  // 7. ダッシュボードへリダイレクト
+  // 7. ログイン通知メールを送信
+  await sendLoginNotification(admin.email, sessionId);
+
+  // 8. ダッシュボードへリダイレクト
   res.writeHead(302, { Location: "/admin/dashboard" });
   res.end();
 }
