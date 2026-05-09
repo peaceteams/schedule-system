@@ -29,13 +29,29 @@ export default async function handler(req, res) {
     })
     .eq("id", admin.id);
 
-  // ★ 共通ロジックで sessionId を取得
-  const sessionId = await getOrCreateSession(admin.id, req);
+  // 1. admin を取得
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("*")
+    .eq("verification_token", token)
+    .single();
+
+  // 2. admin が null → token 無効
+  if (!admin) {
+    return res.status(400).json({
+      ok: false,
+      error: "INVALID_TOKEN",
+    });
+  }
+
+  // 3. must_reset_password チェック
   const check = checkMustResetPassword(admin);
   if (!check.ok) {
     return res.status(403).json(check);
   }
-  await sendLoginNotification(admin.email, sessionId);
+
+  // 4. セッション作成
+  const sessionId = await getOrCreateSession(admin.id, req);
 
   // JWT を発行
   const jwtToken = jwt.sign(
