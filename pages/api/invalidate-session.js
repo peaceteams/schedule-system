@@ -23,10 +23,10 @@ export default async function handler(req, res) {
   const adminId = session.admin_id;
   const email = session.admins.email;
 
-  // 2. セッション削除（この端末だけログアウト）
+  // 2. セッションアップデート（この端末だけログアウト）
   await supabase
     .from("admin_sessions")
-    .delete()
+    .update({ is_deleted: true })
     .eq("id", sessionId);
 
   // 3. パスワードリセットフラグを立ててメール送信（lib 呼び出し）
