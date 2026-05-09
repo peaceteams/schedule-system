@@ -12,6 +12,15 @@ export default async function handler(req, res) {
 
   if (!sessionId) return res.status(400).send("Missing session");
 
+  console.log("sessionId:", sessionId);
+
+  const { data: check } = await supabase
+    .from("admin_sessions")
+    .select("*")
+    .eq("id", sessionId);
+
+  console.log("DB check:", check);
+
   const { data: session } = await supabase
     .from("admin_sessions")
     .select("id, admin_id, admins(email)")
