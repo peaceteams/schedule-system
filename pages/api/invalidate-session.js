@@ -1,63 +1,36 @@
 // /api/invalidate-session?session=xxxx
-import { createClient } from "@supabase/supabase-js";
+import supabase from "@/lib/db";
 import { forcePasswordReset } from "@/lib/resetPassword";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE
-);
 
 export default async function handler(req, res) {
   const sessionId = req.query.session;
 
-  if (!sessionId) return res.status(400).send("Missing session");
+  if (!sessionId) {
+    return res.status(400).send("Missing session");
+  }
 
-  console.log("sessionId:", sessionId);
-
-  // 1. セッション情報を取得（adminId と email を得る）
-  const { data: sessionCheck, error: checkError } = await supabase
+  // 1. セッション情報を取得（admin_id を知るため）
+  const { data: session } = await supabase
     .from("admin_sessions")
-    .select("id, admin_id, admins(email)")
+    .select("admin_id, admins(email)")
     .eq("id", sessionId)
     .single();
 
-  console.log("DB check:", sessionCheck);
-
-  if (!sessionCheck) {
+  if (!session) {
     return res.status(404).send("Session not found");
   }
 
-  const adminId = sessionCheck.admin_id;
-  const email = sessionCheck.admins?.email;
+  const adminId = session.admin_id;
+  const email = session.admins.email;
 
-  // 2. is_deleted を true に更新（Realtime 用）
-  const { data: updateResult, error: updateError } = await supabase
-    .from("admin_sessions")
-    .update({ is_deleted: true })
-    .eq("id", sessionId);
-
-  console.log("[API] UPDATE error:", updateError);
-  console.log("[API] UPDATE raw result:", updateResult);
-
-  // 3. 更新後の状態を確認（デバッグ）
-  const { data: afterUpdate, error: afterError } = await supabase
-    .from("admin_sessions")
-    .select("id, is_deleted")
-    .eq("id", sessionId);
-
-  console.log("[API] AFTER UPDATE:", afterUpdate, afterError);
-
-  // 4. DELETE
+  // 2. セッション削除（この端末だけログアウト）
   await supabase
     .from("admin_sessions")
     .delete()
-    .eq("id", sessionId)
-    .select();
+    .eq("id", sessionId);
 
-  // 5. パスワードリセットメール送信
+  // 3. パスワードリセットフラグを立ててメール送信（lib 呼び出し）
   await forcePasswordReset(adminId, email);
 
-  return res
-    .status(200)
-    .send("Session invalidated and password reset email sent");
+  return res.status(200).send("Session invalidated and password reset email sent");
 }
