@@ -23,13 +23,14 @@ export default async function handler(req, res) {
   const adminId = session.admin_id;
   const email = session.admins?.email;
 
-  // UPDATE
-  await supabase
+  const { data, error } = await supabase
     .from("admin_sessions")
     .update({ is_deleted: true })
     .eq("id", sessionId);
 
-  // DELETE（同期）
+  console.log("UPDATE result:", data, error);
+
+  // DELETE
   await supabase
     .from("admin_sessions")
     .delete()
