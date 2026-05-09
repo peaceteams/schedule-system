@@ -41,6 +41,14 @@ export default function AdminLogin({ hasCookie }) {
     // ★ 追加：パスワードをハッシュ化
     const hashed = await hashPassword(password);
 
+    const check = checkMustResetPassword(admin);
+    if (!check.ok) {
+      return res.status(403).json({
+        ok: false,
+        message: "アカウントがロックされました。メールからパスワードリセットを行ってください。"
+      });
+    }
+
     if (hasCookie) {
       const res = await fetch("/api/directLogin", {
         method: "POST",
