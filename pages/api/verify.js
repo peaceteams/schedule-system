@@ -19,35 +19,7 @@ export default async function handler(req, res) {
     return res.status(400).send("Invalid token");
   }
 
-  // 2. must_reset_password チェック（先にやる）
-  const check = checkMustResetPassword(admin);
-  if (!check.ok) {
-    return res.status(403).json(check);
-  }
-
-  // 3. セッション作成
-  const sessionId = await getOrCreateSession(admin.id, req);
-
-  // 4. JWT を発行
-  const jwtToken = jwt.sign(
-    { sessionId },
-    process.env.JWT_SECRET,
-    { expiresIn: "12h" }
-  );
-
-  // 5. Cookie に保存
-  res.setHeader(
-    "Set-Cookie",
-    serialize("admin_session", jwtToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 12,
-    })
-  );
-
-  // 6. ★ 成功後にトークンを無効化（これが正しい順番）
+  // 2. トークンを無効化（再利用防止）
   await supabase
     .from("admins")
     .update({
@@ -56,6 +28,34 @@ export default async function handler(req, res) {
       is_verified: true,
     })
     .eq("id", admin.id);
+
+  // 3. must_reset_password チェック
+  const check = checkMustResetPassword(admin);
+  if (!check.ok) {
+    return res.status(403).json(check);
+  }
+
+  // 4. セッション作成
+  const sessionId = await getOrCreateSession(admin.id, req);
+
+  // 5. JWT を発行
+  const jwtToken = jwt.sign(
+    { sessionId },
+    process.env.JWT_SECRET,
+    { expiresIn: "12h" }
+  );
+
+  // 6. Cookie に保存
+  res.setHeader(
+    "Set-Cookie",
+    serialize("admin_session", jwtToken, {
+      httpOnly: true,
+      secure: true,        // ★ 必須
+      sameSite: "none",    // ★ これが最重要
+      path: "/",
+      maxAge: 60 * 60 * 12,
+    })
+  );
 
   // 7. ログイン通知メールを送信
   await sendLoginNotification(admin.email, sessionId);
