@@ -137,6 +137,8 @@ export default function AdminLogin({ hasCookie }) {
   useEffect(() => {
     if (!isWaiting || !adminId) return;
 
+    let alreadyVerified = false; // ← ★追加：二重実行防止フラグ
+
     const channel = supabase
       .channel("login-verification")
       .on(
@@ -147,11 +149,18 @@ export default function AdminLogin({ hasCookie }) {
           table: "admins",
         },
         async (payload) => {
-          if (payload.new.id === adminId && payload.new.is_verified === true) {
+          if (
+            !alreadyVerified && // ← ★追加：2回目を防ぐ
+            payload.new.id === adminId &&
+            payload.new.is_verified === true
+          ) {
+            alreadyVerified = true; // ← ★追加：ここでロック
+
             await fetch(`/api/verify?token=${payload.new.verification_token}`, {
               method: "GET",
               credentials: "include",
             });
+
             window.location.href = "/admin/dashboard";
           }
         }
