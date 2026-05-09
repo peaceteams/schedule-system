@@ -7,9 +7,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-export default function Dashboard({ admin }) {
+export default function Dashboard({ adminId, sessionId }) {
   useEffect(() => {
-    // ★ Realtime: admin_sessions の DELETE を監視
     const channel = supabase
       .channel("session-watch")
       .on(
@@ -20,26 +19,20 @@ export default function Dashboard({ admin }) {
           table: "admin_sessions",
         },
         (payload) => {
-          console.log("DELETE DETECTED:", payload);
-
-          // ★ 自分の sessionId が削除されたら即ログアウト
-          if (payload.old.id === admin.sessionId) {
-            console.log("This device session deleted → force logout");
+          if (payload.old.id === sessionId) {
             window.location.href = "/admin/login";
           }
         }
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [admin.sessionId]);
+    return () => supabase.removeChannel(channel);
+  }, [sessionId]);
 
   return (
     <div>
       <h1>Dashboard</h1>
-      <p>ログイン中: {admin.adminId}</p>
+      <p>ログイン中: {adminId}</p>
 
       <button
         onClick={async () => {
@@ -67,10 +60,8 @@ export async function getServerSideProps({ req }) {
 
   return {
     props: {
-      admin: {
-        adminId: auth.adminId,
-        sessionId: auth.sessionId, // ★ Realtime 用に追加
-      },
+      adminId: auth.adminId,
+      sessionId: auth.sessionId, // ★ admin の中に入れない
     },
   };
 }
