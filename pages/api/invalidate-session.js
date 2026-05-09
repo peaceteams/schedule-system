@@ -34,16 +34,24 @@ export default async function handler(req, res) {
   console.log("[API] adminId:", adminId);
   console.log("[API] email:", email);
 
-  // 2. セッション削除（この端末だけログアウト）
-  const { error: deleteError } = await supabase
+  // 2. 削除フラグを立てる（Realtime が確実に拾える）
+  await supabase
     .from("admin_sessions")
-    .delete()
+    .update({ is_deleted: true })
     .eq("id", sessionId);
 
-  console.log("[API] DELETE sessionId:", sessionId);
-  console.log("[API] DELETE error:", deleteError);
+  // 3. ここで Realtime が発火する（UPDATE）
+  //    old と new が両方入るので sessionId が確実に取れる
 
-  // 3. パスワードリセットフラグを立ててメール送信（lib 呼び出し）
+  // 4. 少し遅らせて DELETE（Realtime はもう不要）
+  setTimeout(async () => {
+    await supabase
+      .from("admin_sessions")
+      .delete()
+      .eq("id", sessionId);
+  }, 500);
+
+  // 5. パスワードリセットフラグを立ててメール送信（lib 呼び出し）
   try {
     console.log("[API] Calling forcePasswordReset...");
     await forcePasswordReset(adminId, email);

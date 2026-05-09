@@ -9,31 +9,30 @@ const supabase = createClient(
 
 export default function Dashboard({ adminId, sessionId }) {
   useEffect(() => {
-    console.log("[Dashboard] sessionId from props:", sessionId);
+    console.log("[Dashboard] Realtime START");
 
     const channel = supabase
       .channel("session-watch")
       .on(
         "postgres_changes",
         {
-          event: "DELETE",
+          event: "UPDATE",
           schema: "public",
           table: "admin_sessions",
         },
         (payload) => {
-          console.log("[Realtime] DELETE payload:", payload);
-          console.log("[Realtime] payload.old.id:", payload?.old?.id);
-          console.log("[Realtime] comparing with sessionId:", sessionId);
+          console.log("[Realtime] payload:", payload);
 
-          if (payload.old.id === sessionId) {
+          // ここで sessionId を if で判定する
+          if (payload.new.id === sessionId && payload.new.is_deleted === true) {
             console.log("[Realtime] MATCH → force logout");
-            window.location.href = "/admin/login";
-          } else {
-            console.log("[Realtime] NOT MATCH → ignore");
+            logout();
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("[Realtime] status:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
