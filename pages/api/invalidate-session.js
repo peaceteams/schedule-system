@@ -21,23 +21,22 @@ export default async function handler(req, res) {
 
   console.log("DB check:", check);
 
-  const { data: session } = await supabase
-    .from("admin_sessions")
-    .select("id, admin_id, admins(email)")
-    .eq("id", sessionId)
-    .single();
-
-  if (!session) return res.status(404).send("Session not found");
-
-  const adminId = session.admin_id;
-  const email = session.admins?.email;
-
-  const { data, error } = await supabase
+  // 2. 削除フラグを立てる（Realtime が確実に拾える）
+  const { data: updateResult, error: updateError } = await supabase
     .from("admin_sessions")
     .update({ is_deleted: true })
     .eq("id", sessionId);
 
-  console.log("UPDATE result:", data, error);
+  console.log("[API] UPDATE error:", updateError);
+  console.log("[API] UPDATE raw result:", updateResult);
+
+  // 直後に DB を再確認
+  const { data: afterUpdate, error: afterError } = await supabase
+    .from("admin_sessions")
+    .select("id, is_deleted")
+    .eq("id", sessionId);
+
+  console.log("[API] AFTER UPDATE:", afterUpdate, afterError);
 
   // DELETE
   await supabase
