@@ -1,64 +1,62 @@
-import supabase from "@/lib/db";
-import jwt from "jsonwebtoken";
+// /api/invalidate-session?session=xxxx
+import { createClient } from "@supabase/supabase-js";
+import { forcePasswordReset } from "@/lib/resetPassword";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export default async function handler(req, res) {
-  try {
-    const token = req.cookies.admin_session;
+  const sessionId = req.query.session;
 
-    if (!token) {
-      return res.status(401).json({ ok: false, error: "NO_SESSION" });
-    }
+  if (!sessionId) return res.status(400).send("Missing session");
 
-    // JWT を decode
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const sessionId = payload.sessionId;
+  console.log("sessionId:", sessionId);
 
-    console.log("sessionId:", sessionId);
+  // 1. セッション情報を取得（adminId と email を得る）
+  const { data: sessionCheck, error: checkError } = await supabase
+    .from("admin_sessions")
+    .select("id, admin_id, admins(email)")
+    .eq("id", sessionId)
+    .single();
 
-    // 1. セッションが存在するか確認
-    const { data: sessionCheck, error: checkError } = await supabase
-      .from("admin_sessions")
-      .select("*")
-      .eq("id", sessionId)
-      .single();
+  console.log("DB check:", sessionCheck);
 
-    console.log("DB check:", sessionCheck);
-
-    if (!sessionCheck) {
-      console.log("SESSION_NOT_FOUND");
-      return res.status(401).json({ ok: false, error: "SESSION_NOT_FOUND" });
-    }
-
-    // ★ adminId をここで定義（ReferenceError 修正）
-    const adminId = sessionCheck.admin_id;
-
-    // 2. is_deleted を true に更新
-    const { data: updateResult, error: updateError } = await supabase
-      .from("admin_sessions")
-      .update({ is_deleted: true })
-      .eq("id", sessionId);
-
-    console.log("[API] UPDATE error:", updateError);
-    console.log("[API] UPDATE raw result:", updateResult);
-
-    // 3. 更新後の状態を確認（デバッグ用）
-    const { data: afterUpdate, error: afterError } = await supabase
-      .from("admin_sessions")
-      .select("id, is_deleted")
-      .eq("id", sessionId);
-
-    console.log("[API] AFTER UPDATE:", afterUpdate, afterError);
-
-    // 4. Cookie を削除
-    res.setHeader(
-      "Set-Cookie",
-      `admin_session=; HttpOnly; Path=/; Max-Age=0; Secure; SameSite=Lax`
-    );
-
-    return res.status(200).json({ ok: true });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+  if (!sessionCheck) {
+    return res.status(404).send("Session not found");
   }
+
+  const adminId = sessionCheck.admin_id;
+  const email = sessionCheck.admins?.email;
+
+  // 2. is_deleted を true に更新（Realtime 用）
+  const { data: updateResult, error: updateError } = await supabase
+    .from("admin_sessions")
+    .update({ is_deleted: true })
+    .eq("id", sessionId);
+
+  console.log("[API] UPDATE error:", updateError);
+  console.log("[API] UPDATE raw result:", updateResult);
+
+  // 3. 更新後の状態を確認（デバッグ）
+  const { data: afterUpdate, error: afterError } = await supabase
+    .from("admin_sessions")
+    .select("id, is_deleted")
+    .eq("id", sessionId);
+
+  console.log("[API] AFTER UPDATE:", afterUpdate, afterError);
+
+  // 4. DELETE（Realtime はもう不要）
+  await supabase
+    .from("admin_sessions")
+    .delete()
+    .eq("id", sessionId);
+
+  // 5. パスワードリセットメール送信
+  await forcePasswordReset(adminId, email);
+
+  return res
+    .status(200)
+    .send("Session invalidated and password reset email sent");
 }
