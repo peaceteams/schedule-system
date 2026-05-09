@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-function logout(){
+async function logout() {
   await fetch("/api/logout", { method: "POST" });
   window.location.href = "/admin/login";
 }
