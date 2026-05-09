@@ -1,6 +1,6 @@
 import supabase from "@/lib/db";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
+import { getOrCreateSession } from "@/lib/session";
 
 export default async function handler(req, res) {
   const { email, password } = req.body;
@@ -19,25 +19,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, error: "パスワードが違います" });
   }
 
-  // ★ 1. sessionId を発行
-  const sessionId = crypto.randomUUID();
+  // ★ 共通ロジックで sessionId を取得
+  const sessionId = await getOrCreateSession(admin.id, req);
 
-  // ★ 2. admin_sessions に保存
-  await supabase.from("admin_sessions").insert({
-    id: sessionId,
-    admin_id: admin.id,
-    user_agent: req.headers["user-agent"] || "",
-    ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress || "",
-  });
-
-  // ★ 3. JWT を sessionId で発行
+  // JWT を発行
   const token = jwt.sign(
     { sessionId },
     process.env.JWT_SECRET,
     { expiresIn: "12h" }
   );
 
-  // ★ 4. Cookie にセット
+  // Cookie にセット
   res.setHeader(
     "Set-Cookie",
     `admin_session=${token}; HttpOnly; Path=/; Max-Age=43200; Secure; SameSite=Lax`

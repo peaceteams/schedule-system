@@ -1,7 +1,7 @@
 import { serialize } from "cookie";
 import supabase from "@/lib/db";
-import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import { getOrCreateSession } from "@/lib/session";
 
 export default async function handler(req, res) {
   const token = req.query.token;
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     return res.status(400).send("Invalid token");
   }
 
-  // 2. トークンを無効化（再利用防止）
+  // 2. トークンを無効化
   await supabase
     .from("admins")
     .update({
@@ -27,25 +27,17 @@ export default async function handler(req, res) {
     })
     .eq("id", admin.id);
 
-  // 3. session_id を発行
-  const sessionId = crypto.randomUUID();
+  // ★ 共通ロジックで sessionId を取得
+  const sessionId = await getOrCreateSession(admin.id, req);
 
-  // 4. admin_sessions に保存
-  await supabase.from("admin_sessions").insert({
-    id: sessionId,
-    admin_id: admin.id,
-    user_agent: req.headers["user-agent"] || "",
-    ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress || "",
-  });
-
-  // 5. JWT を発行（sessionId を入れる）
+  // JWT を発行
   const jwtToken = jwt.sign(
-    { sessionId },  // ← これが重要
+    { sessionId },
     process.env.JWT_SECRET,
     { expiresIn: "12h" }
   );
 
-  // 6. Cookie に保存
+  // Cookie に保存
   res.setHeader(
     "Set-Cookie",
     serialize("admin_session", jwtToken, {
@@ -57,7 +49,7 @@ export default async function handler(req, res) {
     })
   );
 
-  // 7. ダッシュボードへリダイレクト
+  // ダッシュボードへリダイレクト
   res.writeHead(302, { Location: "/admin/dashboard" });
   res.end();
 }
