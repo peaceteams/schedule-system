@@ -2,7 +2,6 @@ import { serialize } from "cookie";
 import supabase from "@/lib/db";
 import jwt from "jsonwebtoken";
 import { getOrCreateSession } from "@/lib/session";
-import { sendLoginNotification } from "@/lib/loginNotification";
 import { checkMustResetPassword } from "@/lib/auth";
 
 export default async function handler(req, res) {
@@ -19,7 +18,7 @@ export default async function handler(req, res) {
     return res.status(400).send("Invalid token");
   }
 
-  // 2. トークンを無効化
+  // 2. トークンを無効化（再利用防止）
   await supabase
     .from("admins")
     .update({
@@ -28,21 +27,6 @@ export default async function handler(req, res) {
       is_verified: true,
     })
     .eq("id", admin.id);
-
-  // 1. admin を取得
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("*")
-    .eq("verification_token", token)
-    .single();
-
-  // 2. admin が null → token 無効
-  if (!admin) {
-    return res.status(400).json({
-      ok: false,
-      error: "INVALID_TOKEN",
-    });
-  }
 
   // 3. must_reset_password チェック
   const check = checkMustResetPassword(admin);
@@ -53,14 +37,14 @@ export default async function handler(req, res) {
   // 4. セッション作成
   const sessionId = await getOrCreateSession(admin.id, req);
 
-  // JWT を発行
+  // 5. JWT を発行
   const jwtToken = jwt.sign(
     { sessionId },
     process.env.JWT_SECRET,
     { expiresIn: "12h" }
   );
 
-  // Cookie に保存
+  // 6. Cookie に保存
   res.setHeader(
     "Set-Cookie",
     serialize("admin_session", jwtToken, {
@@ -72,7 +56,7 @@ export default async function handler(req, res) {
     })
   );
 
-  // ダッシュボードへリダイレクト
+  // 7. ダッシュボードへリダイレクト
   res.writeHead(302, { Location: "/admin/dashboard" });
   res.end();
 }
