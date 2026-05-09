@@ -35,6 +35,10 @@ export default async function handler(req, res) {
   if (!check.ok) {
     return res.status(403).json(check);
   }
+  await supabase
+    .from("admins")
+    .update({ must_reset_password: false })
+    .eq("id", admin.id);
   await sendLoginNotification(admin.email, sessionId);
 
   // JWT を発行
