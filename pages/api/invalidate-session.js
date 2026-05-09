@@ -47,11 +47,12 @@ export default async function handler(req, res) {
 
   console.log("[API] AFTER UPDATE:", afterUpdate, afterError);
 
-  // 4. DELETE（Realtime はもう不要）
+  // 4. DELETE
   await supabase
     .from("admin_sessions")
     .delete()
-    .eq("id", sessionId);
+    .eq("id", sessionId)
+    .select();
 
   // 5. パスワードリセットメール送信
   await forcePasswordReset(adminId, email);
