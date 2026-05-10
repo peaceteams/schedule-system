@@ -1,14 +1,11 @@
+// /api/resetPassword.js
 import supabase from "@/lib/db";
-import crypto from "crypto";
+import { hashPassword } from "@/lib/hashPassword";
 
 export default async function handler(req, res) {
-  const { token, password } = req.body;
+  const { token, newPassword } = req.body;
 
-  if (!token) {
-    return res.status(400).json({ ok: false, error: "無効なトークンです。" });
-  }
-
-  // token から admin を取得
+  // 1. トークンで admin を検索
   const { data: admin } = await supabase
     .from("admins")
     .select("*")
@@ -16,19 +13,22 @@ export default async function handler(req, res) {
     .single();
 
   if (!admin) {
-    return res.status(400).json({ ok: false, error: "無効なトークンです。" });
+    return res.status(400).json({ ok: false, message: "Invalid token" });
   }
 
-  // トークン期限チェック
-  if (new Date(admin.reset_expires) < new Date()) {
-    return res.status(400).json({ ok: false, error: "トークンの有効期限が切れています。" });
+  // 2. 有効期限チェック
+  if (!admin.reset_expires || new Date(admin.reset_expires) < new Date()) {
+    return res.status(400).json({ ok: false, message: "Token expired" });
   }
 
-  // パスワード更新
+  // 3. パスワードをハッシュ化
+  const hashed = hashPassword(newPassword);
+
+  // 4. パスワード更新 & リセット情報クリア
   const { error } = await supabase
     .from("admins")
     .update({
-      password_hash: password,
+      password_hash: hashed,
       must_reset_password: false,
       reset_token: null,
       reset_expires: null,
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     .eq("id", admin.id);
 
   if (error) {
-    return res.status(500).json({ ok: false, error: "更新に失敗しました。" });
+    return res.status(500).json({ ok: false, message: "Update failed" });
   }
 
   return res.status(200).json({ ok: true });
