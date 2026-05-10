@@ -101,6 +101,13 @@ export default async function handler(req, res) {
   }
 
   checkMustResetPassword(existing);
+  if (!check.ok) {
+    console.log("❌ must_reset_password によりログイン拒否");
+    return res.status(403).json({
+      ok: false,
+      message: check.error
+    });
+  }
 
   const { error: updateError } = await supabase
     .from("admins")
