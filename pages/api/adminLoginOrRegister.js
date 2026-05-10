@@ -100,9 +100,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, error: "パスワードが違います" });
   }
 
-  checkMustResetPassword(existing);
+  const check = checkMustResetPassword(existing);
   if (!check.ok) {
-    console.log("❌ must_reset_password によりログイン拒否");
     return res.status(403).json({
       ok: false,
       message: check.error

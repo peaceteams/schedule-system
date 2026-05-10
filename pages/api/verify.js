@@ -20,9 +20,8 @@ export default async function handler(req, res) {
   }
 
   // 2. must_reset_password チェック（先にやる）
-  checkMustResetPassword(admin);
+  const check = checkMustResetPassword(existing);
   if (!check.ok) {
-    console.log("❌ must_reset_password によりログイン拒否");
     return res.status(403).json({
       ok: false,
       message: check.error
