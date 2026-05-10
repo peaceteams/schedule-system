@@ -18,12 +18,12 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    const password = await hashPassword(password);
+    const hashedPassword = await hashPassword(password);
 
     const res = await fetch("/api/resetPassword", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, password }),
+      body: JSON.stringify({ token, hashedPassword }),
     });
 
     const data = await res.json();
