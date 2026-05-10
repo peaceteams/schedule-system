@@ -37,6 +37,7 @@ export default function AdminLogin({ hasCookie }) {
   async function handleLogin(e) {
     e.preventDefault();
     setIsLoading(true);
+    setMessage();
 
     // ★ 追加：パスワードをハッシュ化
     const hashed = await hashPassword(password);
