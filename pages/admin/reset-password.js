@@ -60,15 +60,9 @@ export default function ResetPasswordPage() {
     }
   }
 
-  // SSR → CSR の不一致を防ぐ
-  if (!ready) {
-    return <p>読み込み中…</p>;
-  }
-
-  // token が無いときだけ無効リンク
-  if (!token) {
-    return <p>無効なリンクです。</p>;
-  }
+  if (status === "loading") return <p>読み込み中…</p>;
+  if (status === "invalid") return <p>無効なリンクです。</p>;
+  if (status === "valid") return <ResetForm token={token} />;
 
   return (
     <div style={{ maxWidth: 400, margin: "40px auto" }}>
