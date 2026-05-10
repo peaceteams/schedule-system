@@ -13,6 +13,7 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState("loading");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
