@@ -18,7 +18,7 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    password = await hashPassword(password);
+    const password = await hashPassword(password);
 
     const res = await fetch("/api/resetPassword", {
       method: "POST",
