@@ -100,13 +100,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, error: "パスワードが違います" });
   }
 
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("*")
-    .eq("verification_token", token)
-    .single();
-
-  checkMustResetPassword(admin);
+  checkMustResetPassword(existing);
 
   const { error: updateError } = await supabase
     .from("admins")
