@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { hashPassword } from "@/lib/client/hashPassword";
+import { hashPassword } from "@/lib/hashPassword";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,

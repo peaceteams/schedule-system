@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { hashPassword } from "@/lib/hashPassword";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -16,6 +17,8 @@ export default function ResetPasswordPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setIsLoading(true);
+
+    password = await hashPassword(password);
 
     const res = await fetch("/api/resetPassword", {
       method: "POST",

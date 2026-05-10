@@ -3,7 +3,7 @@ import supabase from "@/lib/db";
 import { hashPassword } from "@/lib/hashPassword";
 
 export default async function handler(req, res) {
-  const { token, newPassword } = req.body;
+  const { token, password } = req.body;
 
   // 1. トークンで admin を検索
   const { data: admin } = await supabase
@@ -21,14 +21,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, message: "Token expired" });
   }
 
-  // 3. パスワードをハッシュ化
-  const hashed = hashPassword(newPassword);
-
   // 4. パスワード更新 & リセット情報クリア
   const { error } = await supabase
     .from("admins")
     .update({
-      password_hash: hashed,
+      password_hash: password,
       must_reset_password: false,
       reset_token: null,
       reset_expires: null,
