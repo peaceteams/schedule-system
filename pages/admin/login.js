@@ -41,14 +41,6 @@ export default function AdminLogin({ hasCookie }) {
     // ★ 追加：パスワードをハッシュ化
     const hashed = await hashPassword(password);
 
-    const { data: admin } = await supabase
-      .from("admins")
-      .select("*")
-      .eq("verification_token", token)
-      .single();
-
-    checkMustResetPassword(admin);
-
     if (hasCookie) {
       const res = await fetch("/api/directLogin", {
         method: "POST",
