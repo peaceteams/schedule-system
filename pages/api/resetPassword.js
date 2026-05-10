@@ -1,6 +1,5 @@
 // /api/resetPassword.js
 import supabase from "@/lib/db";
-import { hashPassword } from "@/lib/hashPassword";
 
 export default async function handler(req, res) {
   const { token, hashedPassword } = req.body;
