@@ -1,20 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { hashPassword } from "@/lib/hashPassword";
 
 export default function ResetPasswordPage() {
+  const router = useRouter();
+
+  const [token, setToken] = useState(null);
+  const [ready, setReady] = useState(false);
+
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [token, setToken] = useState(null);
-  const [isReady, setIsReady] = useState(false);
 
+  // URL の token を毎回正しく取得する
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("token");
+    if (!router.isReady) return;
+
+    const t = router.query.token || null;
     setToken(t);
-    setIsReady(true);
-  }, []);
+    setReady(true);
+  }, [router.isReady, router.query.token]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -41,10 +48,12 @@ export default function ResetPasswordPage() {
     }
   }
 
-  if (!isReady) {
+  // SSR → CSR の不一致を防ぐ
+  if (!ready) {
     return <p>読み込み中…</p>;
   }
 
+  // token が無いときだけ無効リンク
   if (!token) {
     return <p>無効なリンクです。</p>;
   }
