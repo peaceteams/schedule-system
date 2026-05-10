@@ -14,11 +14,22 @@ export default function ResetPasswordPage() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // URL の token を毎回正しく取得する
+  // URL の token を毎回正しく取得する（配列対応）
   useEffect(() => {
     if (!router.isReady) return;
 
-    const t = router.query.token || null;
+    let t = router.query.token;
+
+    // token が配列なら最初の要素を使う
+    if (Array.isArray(t)) {
+      t = t[0];
+    }
+
+    // 空文字や undefined の場合は null に統一
+    if (!t || t.trim().length === 0) {
+      t = null;
+    }
+
     setToken(t);
     setReady(true);
   }, [router.isReady, router.query.token]);
