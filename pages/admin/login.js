@@ -70,7 +70,24 @@ export default function AdminLogin({ hasCookie }) {
       }),
     });
 
-    const data = await res.json();
+    if (!res.ok) {
+      let msg = "ログインに失敗しました";
+
+      try {
+        const err = await res.json();
+        msg = err.message || err.error || msg;
+      } catch (e) {
+        // JSON じゃない（＝Vercel の HTML）場合
+        msg = "アカウントがロックされています。メールからパスワードリセットを行ってください。";
+      }
+
+      setMessage(msg);
+      setIsLoading(false);
+    return;
+  }
+
+  // ★ 正常時だけ JSON を読む
+  const data = await res.json();
     setIsLoading(false);
 
     if (data.ok) {
