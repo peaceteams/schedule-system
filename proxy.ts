@@ -10,7 +10,7 @@ export function proxy(request: Request) {
     ?.split("=")[1];
 
   // /admin/login は保護しない
-  if (url.pathname === "/admin/login") {
+  if (url.pathname === "/admin/login" || url.pathname === "/admin/reset-password") {
     return NextResponse.next();
   }
 
