@@ -38,7 +38,6 @@ export default function ResetPasswordPage() {
 
   if (status === "loading") return <p>読み込み中…</p>;
   if (status === "invalid") return <p>無効なリンクです。</p>;
-  if (status === "valid") return <ResetForm token={token} />;
 
   async function handleSubmit(e) {
     e.preventDefault();
