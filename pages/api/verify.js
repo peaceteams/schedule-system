@@ -8,8 +8,6 @@ import { checkMustResetPassword } from "@/lib/auth";
 
 export default async function handler(req, res) {
   const token = req.query.token;
-  // IP & 地域情報取得
-  const { ip, geo } = await getClientInfo(req);
 
   // 1. トークンで管理者を検索
   const { data: admin } = await supabase
@@ -63,8 +61,16 @@ export default async function handler(req, res) {
     })
     .eq("id", admin.id);
 
-  // 7. ログイン通知メールを送信
-  await sendLoginNotification(admin.email, sessionId, ip, geo);
+  // クライアント情報取得&ログイン通知を送信
+  const clientInfo = await getClientInfo(req);
+
+  await sendLoginNotification(
+    email,
+    sessionId,
+    clientInfo.ip,
+    clientInfo.geo,
+    clientInfo.ua
+  );
 
   // 8. ダッシュボードへリダイレクト
   res.writeHead(302, { Location: "/admin/dashboard" });

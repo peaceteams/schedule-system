@@ -15,9 +15,6 @@ export default async function handler(req, res) {
   }
   processing = true;
 
-  // IP & 地域情報取得
-  const { ip, geo } = await getClientInfo(req);
-
   try {
     const { email, password } = req.body;
 
@@ -45,7 +42,17 @@ export default async function handler(req, res) {
 
     // ★ 共通ロジックで sessionId を取得
     const sessionId = await getOrCreateSession(admin.id, req);
-    await sendLoginNotification(admin.email, sessionId, ip, geo);
+
+    // クライアント情報取得&ログイン通知を送信
+    const clientInfo = await getClientInfo(req);
+
+    await sendLoginNotification(
+      email,
+      sessionId,
+      clientInfo.ip,
+      clientInfo.geo,
+      clientInfo.ua
+    );
 
     // JWT を発行
     const token = jwt.sign(
