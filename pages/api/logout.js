@@ -1,45 +1,56 @@
 // /api/logout
 import supabase from "@/lib/db";
 import { getSessionFromCookie } from "@/lib/session";
+import jwt from "jsonwebtoken";
 
 export default async function handler(req, res) {
   console.log("=== /api/logout START ===");
 
-  // 1. Cookie からセッション取得
-  const session = getSessionFromCookie(req);
-  console.log("[LOGOUT] session from cookie:", session);
+  const raw = getSessionFromCookie(req);
+  console.log("[LOGOUT] raw cookie:", raw);
 
-  if (!session) {
-    console.log("[LOGOUT] No session found in cookie → nothing to delete");
+  if (!raw) {
+    console.log("[LOGOUT] No cookie → END");
     return res.status(200).json({ ok: true });
   }
 
-  const sessionId = session.sessionId;
-  console.log("[LOGOUT] target sessionId:", sessionId);
+  // JWT を decode
+  let decoded;
+  try {
+    decoded = jwt.verify(raw.sessionId, process.env.JWT_SECRET);
+    console.log("[LOGOUT] decoded JWT:", decoded);
+  } catch (e) {
+    console.log("[LOGOUT] JWT decode error:", e);
+    return res.status(400).json({ ok: false, error: "invalid token" });
+  }
 
-  // 2. DELETE 実行（eq の書き方を修正）
-  const { data: deleteData, error: deleteError } = await supabase
+  const sessionId = decoded.sessionId;
+  console.log("[LOGOUT] extracted sessionId:", sessionId);
+
+  // DELETE 実行
+  const { data, error } = await supabase
     .from("admin_sessions")
     .delete()
     .eq("id", sessionId);
 
-  console.log("[LOGOUT] deleteData:", deleteData);
-  console.log("[LOGOUT] deleteError:", deleteError);
+  console.log("[LOGOUT] deleteData:", data);
+  console.log("[LOGOUT] deleteError:", error);
 
-  if (deleteError) {
-    console.log("[LOGOUT] DELETE FAILED:", deleteError);
-    return res.status(500).json({ ok: false, error: deleteError });
+  if (error) {
+    console.log("[LOGOUT] DELETE FAILED:", error);
+    return res.status(500).json({ ok: false, error });
   }
 
   console.log("[LOGOUT] DELETE SUCCESS");
 
-  // 3. Cookie 削除
+  // Cookie 削除
   res.setHeader(
     "Set-Cookie",
     "admin_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict; Secure"
   );
-  console.log("[LOGOUT] Cookie cleared");
 
+  console.log("[LOGOUT] Cookie cleared");
   console.log("=== /api/logout END ===");
+
   return res.status(200).json({ ok: true });
 }
