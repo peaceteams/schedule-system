@@ -34,7 +34,13 @@ export default async function handler(req, res) {
     .update({ is_deleted: true })
     .eq("id", sessionId);
 
-  // 3. パスワードリセットフラグを立ててメール送信（lib 呼び出し）
+  // 3. セッション削除
+    const { error } = await supabase
+    .from("admin_sessions")
+    .delete()
+    .eq("id", sessionId);
+
+  // 4. パスワードリセットフラグを立ててメール送信（lib 呼び出し）
   await forcePasswordReset(adminId, email);
 
   return res.status(200).send("Session invalidated and password reset email sent");
