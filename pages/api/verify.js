@@ -2,11 +2,14 @@ import { serialize } from "cookie";
 import supabase from "@/lib/db";
 import jwt from "jsonwebtoken";
 import { getOrCreateSession } from "@/lib/session";
+import { getClientInfo } from "@/lib/getClientInfo";
 import { sendLoginNotification } from "@/lib/loginNotification";
 import { checkMustResetPassword } from "@/lib/auth";
 
 export default async function handler(req, res) {
   const token = req.query.token;
+  // IP & 地域情報取得
+  const { ip, geo } = await getClientInfo(req);
 
   // 1. トークンで管理者を検索
   const { data: admin } = await supabase
@@ -61,7 +64,7 @@ export default async function handler(req, res) {
     .eq("id", admin.id);
 
   // 7. ログイン通知メールを送信
-  await sendLoginNotification(admin.email, sessionId);
+  await sendLoginNotification(admin.email, sessionId, ip, geo);
 
   // 8. ダッシュボードへリダイレクト
   res.writeHead(302, { Location: "/admin/dashboard" });
