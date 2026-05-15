@@ -29,6 +29,10 @@ export default async function handler(req, res) {
   console.log("generated token:", token);
   console.log("expires:", expires);
 
+  // 現在時刻（日本時間）
+  const now = new Date();
+  const jpTime = now.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+
   // -----------------------------
   // ① 未登録 → 新規登録フロー
   // -----------------------------
@@ -60,7 +64,7 @@ export default async function handler(req, res) {
 
     await sendMail({
       to: email,
-      subject: "管理者登録の確認",
+      subject: `管理者登録の確認(${jpTime})`,
       html: `
         <p>以下のボタンをクリックしてメールアドレスを確認してください。</p>
         <a href="${verifyUrl}"
@@ -77,6 +81,10 @@ export default async function handler(req, res) {
           メールアドレスを確認する
         </a>
         <p>このリンクは5分間有効です。</p>
+        <hr />
+        <p style="font-size: 12px; color: #666;">
+          送信日時：${jpTime}
+        </p>
       `
     });
 
@@ -123,7 +131,7 @@ export default async function handler(req, res) {
 
   await sendMail({
     to: email,
-    subject: "ログイン認証",
+    subject: `ログイン認証(${jpTime})`,
     html: `
       <p>以下のボタンをクリックしてメールアドレスを確認してください。</p>
       <a href="${verifyUrl}"
@@ -140,6 +148,10 @@ export default async function handler(req, res) {
         メールアドレスを確認する
       </a>
       <p>このリンクは5分間有効です。</p>
+      <hr />
+      <p style="font-size: 12px; color: #666;">
+        送信日時：${jpTime}
+      </p>
     `
   });
 
