@@ -65,7 +65,7 @@ export default async function handler(req, res) {
   const clientInfo = await getClientInfo(req);
 
   await sendLoginNotification(
-    email,
+    admin.email,
     sessionId,
     clientInfo.ip,
     clientInfo.geo,
