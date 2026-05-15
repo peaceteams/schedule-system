@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   await supabase
     .from("admin_sessions")
     .delete()
-    .eq("id", session.sessionId);
+    .eq(session.sessionId);
 
   res.setHeader(
     "Set-Cookie",
