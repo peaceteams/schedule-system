@@ -62,14 +62,18 @@ export default async function handler(req, res) {
     .eq("id", admin.id);
 
   // クライアント情報取得&ログイン通知を送信
-  const clientInfo = await getClientInfo(req);
+  const { data: session } = await supabase
+    .from("admin_sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .single();
 
   await sendLoginNotification(
     admin.email,
     sessionId,
-    clientInfo.ip,
-    clientInfo.geo,
-    clientInfo.ua
+    session.ip,
+    { country: session.country, region: session.region },
+    session.user_agent
   );
 
   // 8. ダッシュボードへリダイレクト

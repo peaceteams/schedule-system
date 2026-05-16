@@ -85,6 +85,18 @@ export default function AdminLogin({ hasCookie }) {
 
     if (data.ok) {
       setAdminId(data.adminId);
+      
+      const clientInfo = await getClientInfo(req);
+      const sessionId = await getOrCreateSession(adminId, req);
+
+      await supabase.from("admin_sessions").insert({
+        id: sessionId,
+        admin_id: adminId,
+        ip: clientInfo.ip,
+        country: clientInfo.geo?.country,
+        region: clientInfo.geo?.region,
+        user_agent: clientInfo.ua,
+      });
 
       const clientExpiresAt = new Date(Date.now() + (DEBUG_EXPIRES + 1) * 1000).toISOString();
       setExpiresAt(clientExpiresAt);

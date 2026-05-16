@@ -44,14 +44,18 @@ export default async function handler(req, res) {
     const sessionId = await getOrCreateSession(admin.id, req);
 
     // クライアント情報取得&ログイン通知を送信
-    const clientInfo = await getClientInfo(req);
+    const { data: session } = await supabase
+      .from("admin_sessions")
+      .select("*")
+      .eq("id", sessionId)
+      .single();
 
     await sendLoginNotification(
-      email,
+      admin.email,
       sessionId,
-      clientInfo.ip,
-      clientInfo.geo,
-      clientInfo.ua
+      session.ip,
+      { country: session.country, region: session.region },
+      session.user_agent
     );
 
     // JWT を発行
