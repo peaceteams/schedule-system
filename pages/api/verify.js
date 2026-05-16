@@ -61,19 +61,22 @@ export default async function handler(req, res) {
     })
     .eq("id", admin.id);
 
-  // クライアント情報取得&ログイン通知を送信
+  // DB からセッション情報を取得
   const { data: session } = await supabase
     .from("admin_sessions")
     .select("*")
     .eq("id", sessionId)
     .single();
 
+  // DB の IP と UA を使って地域を取得
+  const clientInfo = await getClientInfoFromIp(session.ip, session.user_agent);
+
   await sendLoginNotification(
     admin.email,
     sessionId,
-    session.ip,
-    { country: session.country, region: session.region },
-    session.user_agent
+    clientInfo.ip,
+    clientInfo.geo,
+    clientInfo.ua
   );
 
   // 8. ダッシュボードへリダイレクト
