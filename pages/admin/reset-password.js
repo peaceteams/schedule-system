@@ -24,7 +24,7 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    fetch(`/api/checkResetToken?token=${t}`)
+    fetch(`/api/account/checkResetToken?token=${t}`)
       .then(res => res.json())
       .then(data => {
         if (data.ok) {
@@ -45,7 +45,7 @@ export default function ResetPasswordPage() {
 
     const hashedPassword = await hashPassword(password);
 
-    const res = await fetch("/api/resetPassword", {
+    const res = await fetch("/api/account/resetPassword", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, hashedPassword }),
