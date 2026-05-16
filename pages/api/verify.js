@@ -69,7 +69,10 @@ export default async function handler(req, res) {
     .single();
 
   // DB の IP と UA を使って地域を取得
+  console.log("VERIFY SESSION IP:", session.ip);
+  console.log("VERIFY SESSION UA:", session.user_agent);
   const clientInfo = await getClientInfo(session.ip, session.user_agent);
+  console.log("DEBUG clientInfo:", clientInfo);
 
   await sendLoginNotification(
     admin.email,
