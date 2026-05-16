@@ -59,7 +59,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: "登録に失敗しました" });
     }
 
-    const verifyUrl = `${process.env.BASE_URL}/api/account/verify-email?token=${token}`;
+    const verifyUrl = `${process.env.BASE_URL}/api/admin/verify-email?token=${token}`;
     console.log("verifyUrl:", verifyUrl);
 
     await sendMail({
@@ -126,7 +126,7 @@ export default async function handler(req, res) {
 
   console.log("updateError:", updateError);
 
-  const verifyUrl = `${process.env.BASE_URL}/api/account/verify-email?token=${token}`;
+  const verifyUrl = `${process.env.BASE_URL}/api/admin/verify-email?token=${token}`;
   console.log("verifyUrl:", verifyUrl);
 
   await sendMail({

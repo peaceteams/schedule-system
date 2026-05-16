@@ -8,7 +8,7 @@ const supabase = createClient(
 );
 
 async function logout() {
-  await fetch("/api/logout", { method: "POST" });
+  await fetch("/api/admin/logout", { method: "POST" });
   window.location.href = "/admin/login";
 }
 

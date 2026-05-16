@@ -35,7 +35,7 @@ export default function AdminLogin({ hasCookie }) {
     const hashed = await hashPassword(password);
 
     if (hasCookie) {
-      const res = await fetch("/api/account/directLogin", {
+      const res = await fetch("/api/admin/directLogin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password: hashed }),
@@ -53,7 +53,7 @@ export default function AdminLogin({ hasCookie }) {
       }
     }
 
-    const res = await fetch("/api/account/adminLoginOrRegister", {
+    const res = await fetch("/api/admin/adminLoginOrRegister", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -126,7 +126,7 @@ export default function AdminLogin({ hasCookie }) {
 
         if (isNewUser) {
           setMessage("認証期限が切れました。再度登録してください。");
-          fetch("/api/account/deleteUnverified", {
+          fetch("/api/admin/deleteUnverified", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ adminId }),
@@ -166,7 +166,7 @@ export default function AdminLogin({ hasCookie }) {
           ) {
             alreadyVerified = true; // ← ★追加：ここでロック
 
-            await fetch(`/api/account/verify?token=${payload.new.verification_token}`, {
+            await fetch(`/api/admin/verify?token=${payload.new.verification_token}`, {
               method: "GET",
               credentials: "include",
             });
