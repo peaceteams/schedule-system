@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       .single();
 
     // DB の IP と UA を使って地域を取得
-    const clientInfo = await getClientInfoFromIp(session.ip, session.user_agent);
+    const clientInfo = await getClientInfo(session.ip, session.user_agent);
 
     await sendLoginNotification(
       admin.email,
